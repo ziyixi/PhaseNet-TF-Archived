@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "phasenet-pytorch"
+version = "0.0.1"
+description = "PyTorch adaption of PhaseNet"
+authors = ["Ziyi Xi <ziyixi@mail.ustc.edu.cn>","Weiqiang Zhu <wayne.weiqiang@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+torch = "^1.10.1"
+
+[tool.poetry.dev-dependencies]
+pylint = "^2.12.2"
+autopep8 = "^1.6.0"
+Sphinx = "^4.4.0"
+rstcheck = "^3.3.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
