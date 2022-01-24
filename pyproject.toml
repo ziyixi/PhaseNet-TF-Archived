@@ -8,6 +8,9 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.7"
 torch = "^1.10.1"
+pyasdf = "^0.7.5"
+torchvision = "^0.11.2"
+obspy = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.12.2"
