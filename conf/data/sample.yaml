@@ -1,0 +1,10 @@
+defaults:
+  - base_data
+
+train: /Users/ziyixi/OneDrive - Michigan State University/Packages_Research/PhaseNet-PyTorch/dataset/tongaml_train.h5
+test: /Users/ziyixi/OneDrive - Michigan State University/Packages_Research/PhaseNet-PyTorch/dataset/tongaml_test.h5
+
+phases:
+  - TP
+  - TS 
+  - TPS

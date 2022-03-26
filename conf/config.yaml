@@ -1,0 +1,7 @@
+defaults:
+  - base_config
+  - data: sample
+  - preprocess: sample
+  - spectrogram: sample
+  - model: sample
+  - _self_

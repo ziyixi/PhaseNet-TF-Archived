@@ -131,3 +131,13 @@ dmypy.json
 # vscode
 .vscode
 dataset/
+
+# note
+CheckList.md
+
+# logs
+outputs/
+
+# tests
+jupyter/
+figs/
