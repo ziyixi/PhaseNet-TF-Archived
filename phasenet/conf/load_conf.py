@@ -38,28 +38,6 @@ class PreprocessConfig:
     filter_zerophase: bool = False
 
 
-# @dataclass
-# class SpectrogramConfig:
-#     """
-#     set spectrogram conversion for the input waveform dataset
-#     """
-#     n_fft: int = 128  # width of each FFT window (number of frequency bins is n_fft//2 + 1)
-#     hop_length: int = 8  # interval between consecutive windows
-#     window_fn: str = "hann"  # windowing function
-#     # if true, apply the function f(x) = log(1 + x) pointwise to the output of the spectrogram
-#     log_transform: bool = True
-#     # if true, return the magnitude of the complex value in each time-frequency bin
-#     magnitude: bool = False
-#     phase: bool = False
-#     # if true, allow gradients to propagate through the spectrogram transformation
-#     grad: bool = False
-#     # if true, remove the zero frequency row from the spectrogram
-#     discard_zero_freq: bool = False
-#     select_freq: bool = True
-#     dt: float = 0.025
-#     fmin: float = 1.
-#     fmax: float = 10.
-
 @dataclass
 class SpectrogramConfig:
     """
@@ -85,14 +63,15 @@ class ModelConfig:
     in_channels: int = 3
     out_channels: int = 4
     init_features: int = 32
-    n_freq: int = 57
-    use_stft: bool = True
-    encoder_kernel_size: List[int] = field(default_factory=lambda: [2, 3])
-    decoder_kernel_size: List[int] = field(default_factory=lambda: [2, 3])
-    encoder_stride: List[int] = field(default_factory=lambda: [2, 2])
-    decoder_stride: List[int] = field(default_factory=lambda: [2, 2])
-    encoder_padding: List[int] = field(default_factory=lambda: [0, 1])
-    decoder_padding: List[int] = field(default_factory=lambda: [0, 1])
+    n_freq: int = 64
+
+    encoder_conv_kernel_size: List[int] = field(default_factory=lambda: [3, 3])
+    encoder_pool_kernel_size: List[int] = field(default_factory=lambda: [2, 2])
+    encoder_pool_stride: List[int] = field(default_factory=lambda: [2, 2])
+
+    decoder_conv_kernel_size: List[int] = field(default_factory=lambda: [3, 3])
+    decoder_pool_kernel_size: List[int] = field(default_factory=lambda: [2, 2])
+    decoder_pool_stride: List[int] = field(default_factory=lambda: [2, 2])
 
 
 @dataclass

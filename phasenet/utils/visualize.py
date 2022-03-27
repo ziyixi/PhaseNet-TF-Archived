@@ -3,11 +3,12 @@ visualize.py
 
 helper functions to visualzie the dataset and model.
 """
-import matplotlib.pyplot as plt
-from typing import Dict, List, Optional, TypedDict
-import torch
-import numpy as np
 from os.path import join
+from typing import Dict, List, Optional, TypedDict
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
 from matplotlib.pyplot import cm
 from phasenet.utils.normalize import normalize_range
 from tqdm import tqdm

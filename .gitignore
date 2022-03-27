@@ -141,3 +141,4 @@ outputs/
 # tests
 jupyter/
 figs/
+test_scripts/
