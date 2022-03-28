@@ -4,7 +4,7 @@ visualize.py
 helper functions to visualzie the dataset and model.
 """
 from os.path import join
-from typing import List, TypedDict
+from typing import List, TypedDict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,7 @@ class BatchInput(TypedDict):
     label: torch.Tensor
 
 
-def show_input(input_batch: BatchInput, phases: List[str], save_dir: str, sampling_rate: int, x_range: List[int], freq_range: List[int], merge: bool = False, global_max: bool = False, progress: bool = False) -> None:
+def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, sampling_rate: int, x_range: List[int], freq_range: List[int], merge: bool = False, global_max: bool = False, progress: bool = False, predict: Optional[torch.Tensor] = None) -> None:
     """show input dataset and save to pdf files
 
     Args:
@@ -37,6 +37,9 @@ def show_input(input_batch: BatchInput, phases: List[str], save_dir: str, sampli
     """
     data_batch, arrivals_batch, key_batch, sgram_batch, label_batch = input_batch[
         'data'], input_batch["arrivals"], input_batch["key"], input_batch["sgram"], input_batch["label"]
+    if predict != None:
+        # show predict instead
+        label_batch = predict
     batch_size = data_batch.shape[0]
     prange = range(batch_size)
     if progress:
@@ -87,6 +90,8 @@ def show_input(input_batch: BatchInput, phases: List[str], save_dir: str, sampli
                 axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=freq_range[0],
                                  ymax=freq_range[1], colors=color[i], ls='--', lw=1)
                 axes[idx].set_ylabel('Frequency (HZ)', fontsize=18)
+        axes[6].plot(x, label[0, :].numpy(), '--',
+                     c="black", label="Noise")
         axes[6].set_xlabel('time (s)', fontsize=24)
         axes[6].legend()
 
