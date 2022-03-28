@@ -75,6 +75,17 @@ class ModelConfig:
 
 
 @dataclass
+class TrainConfig:
+    """
+    teh trainning configuration
+    """
+    learning_rate: float = 0.01
+    weight_decay: float = 1e-4
+    epochs: int = 20
+    lr_warmup_epochs: int = 0
+
+
+@dataclass
 class Config:
     """
     the configuration for the project
@@ -83,6 +94,7 @@ class Config:
     preprocess: PreprocessConfig = MISSING
     spectrogram: SpectrogramConfig = MISSING
     model: ModelConfig = MISSING
+    train: TrainConfig = MISSING
 
 
 cs = ConfigStore.instance()
@@ -91,3 +103,4 @@ cs.store(group="data", name="base_data", node=DataConfig)
 cs.store(group="preprocess", name="base_preprocess", node=PreprocessConfig)
 cs.store(group="spectrogram", name="base_spectrogram", node=SpectrogramConfig)
 cs.store(group="model", name="base_model", node=ModelConfig)
+cs.store(group="train", name="base_train", node=TrainConfig)

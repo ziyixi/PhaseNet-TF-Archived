@@ -4,4 +4,5 @@ defaults:
   - preprocess: sample
   - spectrogram: sample
   - model: sample
+  - train: sample
   - _self_

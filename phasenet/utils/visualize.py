@@ -4,78 +4,13 @@ visualize.py
 helper functions to visualzie the dataset and model.
 """
 from os.path import join
-from typing import Dict, List, Optional, TypedDict
+from typing import List, TypedDict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.pyplot import cm
-from phasenet.utils.normalize import normalize_range
 from tqdm import tqdm
-
-
-def show_data_batch(data_batch: Dict, phases: List[str], save_dir: str, sampling_rate: int, show_output: bool = False, output_batch: Optional[torch.Tensor] = None) -> None:
-    """
-    plot the input dataset batch after applying at least ArrivalToArray
-    """
-    data_all: torch.Tensor = data_batch['data']
-    label_all: torch.Tensor = data_batch['label']
-    key_all: List[str] = data_batch['key']
-    arrivals_all: torch.Tensor = data_batch['arrivals']
-    batch_size = data_all.shape[0]
-    # plot three components with target
-    for index in range(batch_size):
-        # plot single
-        data, label, key, arrival = data_all[index], label_all[index], key_all[index], arrivals_all[index]
-        rows = 4
-        if show_output:
-            rows += 1
-        fig, axes = plt.subplots(rows, 1, sharex=True, figsize=(20, 20))
-        x = np.arange(data.shape[1])/sampling_rate
-        axes[0].plot(x, normalize_range(
-            data[0, :].numpy(), -10, 10), c="black", lw=1, label="R")
-        axes[0].set_ylabel("Amplitude")
-        axes[1].plot(x, normalize_range(
-            data[1, :].numpy(), -10, 10), c="black", lw=1, label="T")
-        axes[1].set_ylabel("Amplitude")
-        axes[2].plot(x, normalize_range(
-            data[2, :].numpy(), -10, 10), c="black", lw=1, label="Z")
-        axes[2].set_ylabel("Amplitude")
-        # phases
-        color = cm.rainbow(np.linspace(0, 1, len(phases)))
-        for i, each_phase in enumerate(phases):
-            axes[3].plot(x, label[i+1, :].numpy(), '--',
-                         c=color[i], label=each_phase[1:])
-            for idx in range(3):
-                axes[idx].vlines(x=arrival[i]/sampling_rate, ymin=-10, ymax=10,
-                                 colors=color[i], ls='--', lw=2)
-        axes[3].set_ylabel("Target Propability")
-        axes[3].set_xlabel("Time (s)")
-        # output
-        if show_output:
-            output = output_batch[index]
-            for i, each_phase in enumerate(phases):
-                axes[4].plot(x, output[i+1, :].detach().numpy(), '--',
-                             c=color[i], label=each_phase[1:])
-            axes[4].set_ylabel("Estimated Propability")
-            axes[4].set_xlabel("Time (s)")
-
-        for i in range(rows):
-            axes[i].legend()
-
-        fig.savefig(join(save_dir, f"{key}.pdf"), bbox_inches='tight')
-
-
-def show_sgram(sgram: torch.Tensor, key_all: List[str], save_dir: str):
-    batch_size, nc, nt, nf = sgram.shape
-    for index in range(batch_size):
-        fig, axes = plt.subplots(
-            nc//2, 2, sharex=True, sharey=True, figsize=(20, 8))
-        for ic in range(nc):
-            axes[ic//2][ic % 2].imshow(sgram[index, ic].transpose(-1, -
-                                                                  2).numpy(), interpolation='bilinear')
-        fig.savefig(
-            join(save_dir, f"{key_all[index]}.sgram.pdf"), bbox_inches='tight')
 
 
 class BatchInput(TypedDict):

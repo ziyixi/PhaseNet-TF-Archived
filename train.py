@@ -1,15 +1,17 @@
+import random
+
 import hydra
-from omegaconf import OmegaConf
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose
 
 from phasenet.conf.load_conf import Config
+from phasenet.core.train import (criterion, get_optimizer, get_scheduler,
+                                 train_one_epoch)
 from phasenet.data.dataset import WaveFormDataset
 from phasenet.data.transforms import GenLabel, GenSgram, ScaleAmp
 from phasenet.model.unet import UNet
-import torch
-import numpy as np
-import random
 
 
 def setup_seed(seed):
@@ -35,22 +37,15 @@ def train_app(cfg: Config) -> None:
     composed = Compose([trans_label, trans_scale, trans_sgram])
 
     data_train = WaveFormDataset(
-        cfg, data_type="train", transform=composed, progress=False, debug=True, debug_dict={'size': 4})
+        cfg, data_type="train", transform=composed, progress=False, debug=True, debug_dict={'size': 8})
     loader_train = DataLoader(data_train, batch_size=2, shuffle=True)
     # * test batch and plot
-    first_batch = next(iter(loader_train))
-    print("----input info----")
-    print(first_batch.keys())
-    print(first_batch['sgram'].shape)
-    print(first_batch['data'].shape)
-    print(first_batch['label'].shape)
-
-    print("----in progress info----")
     model = UNet(cfg)
-    first_batch_res = model(first_batch['sgram'])
-
-    print("----output info----")
-    print(first_batch_res['predict'].shape)
+    optimizer = get_optimizer(model.parameters(), cfg.train)
+    main_lr_scheduler = get_scheduler(optimizer, len(loader_train), cfg.train)
+    for iepoch in range(cfg.train.epochs):
+        train_one_epoch(model, criterion, optimizer,
+                        loader_train, main_lr_scheduler)
 
 
 if __name__ == "__main__":
