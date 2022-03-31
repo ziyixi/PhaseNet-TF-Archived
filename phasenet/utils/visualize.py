@@ -79,7 +79,7 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         # phases
         color = cm.rainbow(np.linspace(0, 1, len(phases)))
         for i, each_phase in enumerate(phases):
-            axes[6].plot(x, label[i+1, :].numpy(), '--',
+            axes[6].plot(x, label[i+1, :].cpu().numpy(), '--',
                          c=color[i], label=each_phase[1:])
             for idx in [0, 2, 4]:
                 axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=-max_scale,
@@ -90,7 +90,7 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
                 axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=freq_range[0],
                                  ymax=freq_range[1], colors=color[i], ls='--', lw=1)
                 axes[idx].set_ylabel('Frequency (HZ)', fontsize=18)
-        axes[6].plot(x, label[0, :].numpy(), '--',
+        axes[6].plot(x, label[0, :].cpu().numpy(), '--',
                      c="black", label="Noise")
         axes[6].set_xlabel('time (s)', fontsize=24)
         axes[6].legend()

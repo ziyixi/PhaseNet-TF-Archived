@@ -12,14 +12,15 @@ def train_one_epoch(model: nn.Module,
                     optimizer: torch.optim.Optimizer,
                     data_loader: DataLoader,
                     lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
-                    log: bool = False) -> Optional[dict]:
+                    log: bool = False,
+                    device=None) -> Optional[dict]:
     model.train()
     if log:
         loss_log = []
         predict_log = []
     for meta in data_loader:
         # * forward
-        sgram, target = meta['sgram'], meta['label']
+        sgram, target = meta['sgram'].to(device), meta['label'].to(device)
         output = model(sgram)
         predict = output['predict']
         loss = criterion(predict, target)

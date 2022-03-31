@@ -15,6 +15,9 @@ from phasenet.data.transforms import GenLabel, GenSgram, ScaleAmp
 from phasenet.model.unet import UNet
 from phasenet.utils.visualize import show_info
 
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+print(f"{device =}")
+
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -43,7 +46,7 @@ def train_app(cfg: Config) -> None:
     loader_train = DataLoader(data_train, batch_size=2, shuffle=False)
     # * show the initial input
     sampling_rate = cfg.spectrogram.sampling_rate
-    base_save_dir = "/Users/ziyixi/OneDrive - Michigan State University/Packages_Research/PhaseNet-PyTorch/figs"
+    base_save_dir = "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/figs"
 
     target_save_dir = join(base_save_dir, "test_train_simple", "target")
     for each_batch in loader_train:
@@ -52,11 +55,12 @@ def train_app(cfg: Config) -> None:
 
     # * test batch and plot
     model = UNet(cfg)
+    model.to(device)
     optimizer = get_optimizer(model.parameters(), cfg.train)
     main_lr_scheduler = get_scheduler(optimizer, len(loader_train), cfg.train)
     for iepoch in range(cfg.train.epochs):
         res = train_one_epoch(model, criterion, optimizer,
-                              loader_train, main_lr_scheduler, log=True)
+                              loader_train, main_lr_scheduler, log=True, device=device)
         print(f"{iepoch =},{res['loss_mean'] =},{res['loss'] =}")
         # * show first epoch
         if iepoch == 0:
