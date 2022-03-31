@@ -1,3 +1,4 @@
+import logging
 from os.path import join
 
 import hydra
@@ -14,8 +15,11 @@ from phasenet.model.unet import UNet
 from phasenet.utils.seed import setup_seed
 from phasenet.utils.visualize import show_info_batch
 
+# * custome settings
 DEVICE = 'cuda:2'
 FIG_DIR = "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/figs"
+# * logger
+log = logging.getLogger(__name__)
 
 
 @hydra.main(config_path="conf", config_name="config")
@@ -25,6 +29,7 @@ def train_app(cfg: Config) -> None:
 
     # * locate device
     device = torch.device(DEVICE if torch.cuda.is_available() else 'cpu')
+    log.info(f"using {device = }")
 
     # * load data
     trans_label = GenLabel(
@@ -49,8 +54,9 @@ def train_app(cfg: Config) -> None:
     main_lr_scheduler = get_scheduler(optimizer, len(loader_train), cfg.train)
     for iepoch in range(cfg.train.epochs):
         res = train_one_epoch(model, criterion, optimizer,
-                              loader_train, main_lr_scheduler, device=device, log=True)
-        print(f"{iepoch =},{res['loss_mean'] =},{res['loss'] =}")
+                              loader_train, main_lr_scheduler, device=device, enable_log=True)
+        log.info(
+            f"[#{iepoch}], loss_mean:{res['loss_mean']}, {res['loss'] = }")
         # * show first epoch
         # if iepoch == 0:
         #     init_save_dir = join(FIG_DIR, "test_train_simple", "init")

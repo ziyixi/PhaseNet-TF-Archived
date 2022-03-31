@@ -13,9 +13,9 @@ def train_one_epoch(model: nn.Module,
                     data_loader: DataLoader,
                     lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
                     device: torch.device,
-                    log: bool = False) -> Optional[dict]:
+                    enable_log: bool = False) -> Optional[dict]:
     model.train()
-    if log:
+    if enable_log:
         loss_log = []
         predict_log = []
     for meta in data_loader:
@@ -24,7 +24,7 @@ def train_one_epoch(model: nn.Module,
         output = model(sgram)
         predict = output['predict']
         loss = criterion(predict, target)
-        if log:
+        if enable_log:
             loss_log.append(loss.item())
             predict_log.append(
                 torch.nn.functional.softmax(predict.detach(), dim=1))
@@ -34,7 +34,7 @@ def train_one_epoch(model: nn.Module,
         optimizer.step()
         lr_scheduler.step()
 
-    if log:
+    if enable_log:
         return {
             "loss": loss_log,
             "loss_mean": np.mean(loss_log),
