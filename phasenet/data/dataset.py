@@ -27,6 +27,8 @@ class WaveFormDataset(Dataset):
         self.conf = conf
         self.data_type = data_type
         self.transform = transform
+        self.debug = debug
+        self.debug_dict = debug_dict
 
         # * asdf path
         asdf_file_path = ""
@@ -34,6 +36,14 @@ class WaveFormDataset(Dataset):
             asdf_file_path = conf.data.train
         elif self.data_type == "test":
             asdf_file_path = conf.data.test
+        elif self.data_type == "load_train":
+            self.data_type == "train"
+            self.load(conf.data.load_train)
+            return
+        elif self.data_type == "load_test":
+            self.data_type == "test"
+            self.load(conf.data.load_test)
+            return
         else:
             raise Exception("data type must be train or test!")
 
@@ -44,9 +54,9 @@ class WaveFormDataset(Dataset):
         with ASDFDataSet(asdf_file_path, mode="r") as ds:
             wave_keys: List[str] = ds.waveforms.list()
             aux_keys = [item.replace('.', "_") for item in wave_keys]
-            if debug:
-                wave_keys = wave_keys[:debug_dict['size']]
-                aux_keys = aux_keys[:debug_dict['size']]
+            if self.debug:
+                wave_keys = wave_keys[:self.debug_dict['size']]
+                aux_keys = aux_keys[:self.debug_dict['size']]
             if progress:
                 iters = tqdm(zip(wave_keys, aux_keys), total=len(wave_keys))
             else:
@@ -122,3 +132,29 @@ class WaveFormDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
         return sample
+
+    def save(self, file_name: str) -> None:
+        # save the dataset to pt files
+        tosave = {
+            "wave_keys": self.wave_keys,
+            "data": self.data,
+            "label": self.label
+        }
+        torch.save(tosave, file_name)
+
+    def load(self, file_name: str) -> None:
+        # load the data from pt files
+        toload = torch.load(file_name)
+        self.wave_keys: List[str] = toload['wave_keys']
+        self.data: Dict[str, torch.Tensor] = toload['data']
+        self.label: Dict[str, torch.Tensor] = toload['label']
+        # slice if in debug mode
+        if self.debug:
+            self.wave_keys = self.wave_keys[:self.debug_dict['size']]
+            _data = {}
+            _label = {}
+            for key in self.wave_keys:
+                _data[key] = self.data[key]
+                _label[key] = self.label[key]
+            self.data = _data
+            self.label = _label

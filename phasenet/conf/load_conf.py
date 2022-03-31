@@ -17,6 +17,8 @@ class DataConfig:
     """
     train: str = MISSING
     test: str = MISSING
+    load_train: str = MISSING
+    load_test: str = MISSING
     phases: List[str] = MISSING
 
 

@@ -12,8 +12,8 @@ def train_one_epoch(model: nn.Module,
                     optimizer: torch.optim.Optimizer,
                     data_loader: DataLoader,
                     lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
-                    log: bool = False,
-                    device=None) -> Optional[dict]:
+                    device: torch.device,
+                    log: bool = False) -> Optional[dict]:
     model.train()
     if log:
         loss_log = []

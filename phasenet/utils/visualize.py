@@ -4,12 +4,14 @@ visualize.py
 helper functions to visualzie the dataset and model.
 """
 from os.path import join
-from typing import List, TypedDict, Optional
+from typing import List, Optional, TypedDict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.pyplot import cm
+from phasenet.conf.load_conf import Config
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
@@ -39,7 +41,7 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         'data'], input_batch["arrivals"], input_batch["key"], input_batch["sgram"], input_batch["label"]
     if predict != None:
         # show predict instead
-        label_batch = predict
+        label_batch = predict.cpu()
     batch_size = data_batch.shape[0]
     prange = range(batch_size)
     if progress:
@@ -79,7 +81,7 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         # phases
         color = cm.rainbow(np.linspace(0, 1, len(phases)))
         for i, each_phase in enumerate(phases):
-            axes[6].plot(x, label[i+1, :].cpu().numpy(), '--',
+            axes[6].plot(x, label[i+1, :].numpy(), '--',
                          c=color[i], label=each_phase[1:])
             for idx in [0, 2, 4]:
                 axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=-max_scale,
@@ -90,10 +92,24 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
                 axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=freq_range[0],
                                  ymax=freq_range[1], colors=color[i], ls='--', lw=1)
                 axes[idx].set_ylabel('Frequency (HZ)', fontsize=18)
-        axes[6].plot(x, label[0, :].cpu().numpy(), '--',
+        axes[6].plot(x, label[0, :].numpy(), '--',
                      c="black", label="Noise")
         axes[6].set_xlabel('time (s)', fontsize=24)
         axes[6].legend()
 
         fig.savefig(join(save_dir, f"{key}.pdf"), bbox_inches='tight')
         plt.close(fig)
+
+
+def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, predict: Optional[torch.Tensor] = None) -> None:
+    """Save pdf showing the results for all the batches
+
+    Args:
+        conf (Config): the configuration for the APP
+        save_directory (str): the saving directory
+        data_loader (DataLoader): the data loader of the dataset to plot
+        predict (Optional[torch.Tensor]): the optional prediction tensor (if None, plot target instead)
+    """
+    for ibatch, each_batch in enumerate(data_loader):
+        show_info(each_batch, phases=cfg.data.phases,  save_dir=save_directory, sampling_rate=cfg.spectrogram.sampling_rate, x_range=[0, cfg.preprocess.win_length], freq_range=[
+                  cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=predict['predict'][ibatch] if predict else None)

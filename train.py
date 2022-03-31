@@ -1,8 +1,6 @@
-import random
 from os.path import join
 
 import hydra
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose
@@ -13,26 +11,21 @@ from phasenet.core.train import (criterion, get_optimizer, get_scheduler,
 from phasenet.data.dataset import WaveFormDataset
 from phasenet.data.transforms import GenLabel, GenSgram, ScaleAmp
 from phasenet.model.unet import UNet
-from phasenet.utils.visualize import show_info
+from phasenet.utils.seed import setup_seed
+from phasenet.utils.visualize import show_info_batch
 
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
-print(f"{device =}")
-
-
-def setup_seed(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-
-
-# Set random number seed
-setup_seed(20)
+DEVICE = 'cuda:2'
+FIG_DIR = "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/figs"
 
 
 @hydra.main(config_path="conf", config_name="config")
 def train_app(cfg: Config) -> None:
+    # * Set random number seed
+    setup_seed(20)
+
+    # * locate device
+    device = torch.device(DEVICE if torch.cuda.is_available() else 'cpu')
+
     # * load data
     trans_label = GenLabel(
         label_shape=cfg.preprocess.label_shape, label_width=cfg.preprocess.label_width)
@@ -40,40 +33,33 @@ def train_app(cfg: Config) -> None:
     trans_sgram = GenSgram(n_fft=cfg.spectrogram.n_fft, hop_length=cfg.spectrogram.hop_length, power=cfg.spectrogram.power, window_fn=cfg.spectrogram.window_fn,
                            freqmin=cfg.spectrogram.freqmin, freqmax=cfg.spectrogram.freqmax, sampling_rate=cfg.spectrogram.sampling_rate, height=cfg.spectrogram.height, width=cfg.spectrogram.width)
     composed = Compose([trans_label, trans_scale, trans_sgram])
-
     data_train = WaveFormDataset(
-        cfg, data_type="train", transform=composed, progress=False, debug=True, debug_dict={'size': 8})
+        cfg, data_type="load_train", transform=composed, progress=True, debug=True, debug_dict={'size': 8})
+    # data_train.save(cfg.data.load_train)
     loader_train = DataLoader(data_train, batch_size=2, shuffle=False)
+
     # * show the initial input
-    sampling_rate = cfg.spectrogram.sampling_rate
-    base_save_dir = "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/figs"
+    # target_save_dir = join(base_save_dir, "test_train_simple", "target")
+    # show_info_batch(cfg, target_save_dir, loader_train)
 
-    target_save_dir = join(base_save_dir, "test_train_simple", "target")
-    for each_batch in loader_train:
-        show_info(each_batch, phases=cfg.data.phases,  save_dir=target_save_dir, sampling_rate=sampling_rate, x_range=[
-            0, cfg.preprocess.win_length], freq_range=[cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False)
-
-    # * test batch and plot
+    # * train the model
     model = UNet(cfg)
     model.to(device)
     optimizer = get_optimizer(model.parameters(), cfg.train)
     main_lr_scheduler = get_scheduler(optimizer, len(loader_train), cfg.train)
     for iepoch in range(cfg.train.epochs):
         res = train_one_epoch(model, criterion, optimizer,
-                              loader_train, main_lr_scheduler, log=True, device=device)
+                              loader_train, main_lr_scheduler, device=device, log=True)
         print(f"{iepoch =},{res['loss_mean'] =},{res['loss'] =}")
         # * show first epoch
-        if iepoch == 0:
-            init_save_dir = join(base_save_dir, "test_train_simple", "init")
-            for ibatch, each_batch in enumerate(loader_train):
-                show_info(each_batch, phases=cfg.data.phases,  save_dir=init_save_dir, sampling_rate=sampling_rate, x_range=[
-                    0, cfg.preprocess.win_length], freq_range=[cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=res['predict'][ibatch])
+        # if iepoch == 0:
+        #     init_save_dir = join(FIG_DIR, "test_train_simple", "init")
+        #     show_info_batch(cfg, init_save_dir, loader_train,
+        #                     predict=res['predict'])
 
     # * show the final plot
-    final_save_dir = join(base_save_dir, "test_train_simple", "final")
-    for ibatch, each_batch in enumerate(loader_train):
-        show_info(each_batch, phases=cfg.data.phases,  save_dir=final_save_dir, sampling_rate=sampling_rate, x_range=[
-            0, cfg.preprocess.win_length], freq_range=[cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=res['predict'][ibatch])
+    # final_save_dir = join(FIG_DIR, "test_train_simple", "final")
+    # show_info_batch(cfg, final_save_dir, loader_train, predict=res['predict'])
 
 
 if __name__ == "__main__":

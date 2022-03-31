@@ -1,8 +1,8 @@
 defaults:
   - base_config
-  - data: sample
+  - data: local
   - preprocess: sample
   - spectrogram: sample
   - model: sample
-  - train: sample
+  - train: local
   - _self_
