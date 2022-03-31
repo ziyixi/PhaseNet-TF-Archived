@@ -17,7 +17,7 @@ from phasenet.utils.visualize import show_info_batch
 
 # * custome settings
 DEVICE = 'cuda:2'
-FIG_DIR = "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/figs"
+FIG_DIR = "/Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/figs"
 # * logger
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,8 @@ def train_app(cfg: Config) -> None:
         label_shape=cfg.preprocess.label_shape, label_width=cfg.preprocess.label_width)
     trans_scale = ScaleAmp(max_amp=1, global_max=True)
     trans_sgram = GenSgram(n_fft=cfg.spectrogram.n_fft, hop_length=cfg.spectrogram.hop_length, power=cfg.spectrogram.power, window_fn=cfg.spectrogram.window_fn,
-                           freqmin=cfg.spectrogram.freqmin, freqmax=cfg.spectrogram.freqmax, sampling_rate=cfg.spectrogram.sampling_rate, height=cfg.spectrogram.height, width=cfg.spectrogram.width)
+                           freqmin=cfg.spectrogram.freqmin, freqmax=cfg.spectrogram.freqmax, sampling_rate=cfg.spectrogram.sampling_rate,
+                           height=cfg.spectrogram.height, width=cfg.spectrogram.width, device=device)
     composed = Compose([trans_label, trans_scale, trans_sgram])
     data_train = WaveFormDataset(
         cfg, data_type="load_train", transform=composed, progress=True, debug=True, debug_dict={'size': 8})
@@ -64,8 +65,8 @@ def train_app(cfg: Config) -> None:
         #                     predict=res['predict'])
 
     # * show the final plot
-    # final_save_dir = join(FIG_DIR, "test_train_simple", "final")
-    # show_info_batch(cfg, final_save_dir, loader_train, predict=res['predict'])
+    final_save_dir = join(FIG_DIR, "test_train_simple", "final")
+    show_info_batch(cfg, final_save_dir, loader_train, predict=res['predict'])
 
 
 if __name__ == "__main__":

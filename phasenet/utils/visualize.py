@@ -38,7 +38,8 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         progress (bool): if show the progress bar
     """
     data_batch, arrivals_batch, key_batch, sgram_batch, label_batch = input_batch[
-        'data'], input_batch["arrivals"], input_batch["key"], input_batch["sgram"], input_batch["label"]
+        'data'].detach(), input_batch["arrivals"].detach(), input_batch["key"], input_batch["sgram"].detach(), input_batch["label"].detach()
+    sgram_batch = sgram_batch.cpu()
     if predict != None:
         # show predict instead
         label_batch = predict.cpu()
@@ -112,4 +113,4 @@ def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, p
     """
     for ibatch, each_batch in enumerate(data_loader):
         show_info(each_batch, phases=cfg.data.phases,  save_dir=save_directory, sampling_rate=cfg.spectrogram.sampling_rate, x_range=[0, cfg.preprocess.win_length], freq_range=[
-                  cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=predict['predict'][ibatch] if predict else None)
+                  cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=predict[ibatch] if predict else None)

@@ -46,7 +46,7 @@ class GenLabel:
 
 
 class GenSgram(Spectrogram):
-    def __init__(self, n_fft: int, hop_length: int, power: int, window_fn: str, freqmin: float, freqmax: float, sampling_rate: int, height: int, width: int) -> None:
+    def __init__(self, n_fft: int, hop_length: int, power: int, window_fn: str, freqmin: float, freqmax: float, sampling_rate: int, height: int, width: int, device: torch.device) -> None:
         window_fn_maper = {
             "hann": torch.hann_window
         }
@@ -64,9 +64,10 @@ class GenSgram(Spectrogram):
         self.sampling_rate = sampling_rate
         self.height = height
         self.width = width
+        self.device = device
 
     def __call__(self, sample: Dict) -> Dict:
-        data: torch.Tensor = sample['data']
+        data: torch.Tensor = sample['data'].to(self.device)
         sgram: torch.Tensor = super().__call__(data)
         # sgram: torch.Tensor = self.func(data)
         # we should cut the frequency between freqmin to freqmax

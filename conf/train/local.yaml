@@ -1,4 +1,4 @@
 defaults:
   - base_train
 
-epochs: 5
+epochs: 2

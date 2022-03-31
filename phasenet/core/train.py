@@ -25,7 +25,7 @@ def train_one_epoch(model: nn.Module,
         predict = output['predict']
         loss = criterion(predict, target)
         if enable_log:
-            loss_log.append(loss.item())
+            loss_log.append(loss.detach().item())
             predict_log.append(
                 torch.nn.functional.softmax(predict.detach(), dim=1))
         # * backward
