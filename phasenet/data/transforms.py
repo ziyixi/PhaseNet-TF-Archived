@@ -56,6 +56,7 @@ class GenSgram(Spectrogram):
             raise Exception(
                 f"Unsupportd windows func {window_fn}. Avaliable candiates are {list(window_fn_maper.keys())}. Try to use the supported func name instead.")
         super().__init__(n_fft=n_fft, hop_length=hop_length, power=power, window_fn=win)
+        super().to(device)
         # self.func = partial(spectrogram, n_fft=n_fft,
         #                     hop_length=hop_length, power=power, window_fn=win)
         self.n_fft = n_fft
