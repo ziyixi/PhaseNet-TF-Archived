@@ -37,7 +37,7 @@ def train_app(cfg: Config) -> None:
     trans_scale = ScaleAmp(max_amp=1, global_max=True)
     trans_sgram = GenSgram(n_fft=cfg.spectrogram.n_fft, hop_length=cfg.spectrogram.hop_length, power=cfg.spectrogram.power, window_fn=cfg.spectrogram.window_fn,
                            freqmin=cfg.spectrogram.freqmin, freqmax=cfg.spectrogram.freqmax, sampling_rate=cfg.spectrogram.sampling_rate,
-                           height=cfg.spectrogram.height, width=cfg.spectrogram.width, device=device)
+                           height=cfg.spectrogram.height, width=cfg.spectrogram.width, max_clamp=cfg.spectrogram.max_clamp, device=device)
     composed = Compose([trans_label, trans_scale, trans_sgram])
     data_train = WaveFormDataset(
         cfg, data_type="load_train", transform=composed, progress=True, debug=True, debug_dict={'size': 8})
@@ -45,8 +45,8 @@ def train_app(cfg: Config) -> None:
     loader_train = DataLoader(data_train, batch_size=2, shuffle=False)
 
     # * show the initial input
-    # target_save_dir = join(base_save_dir, "test_train_simple", "target")
-    # show_info_batch(cfg, target_save_dir, loader_train)
+    target_save_dir = join(FIG_DIR, "test_train_simple", "target")
+    show_info_batch(cfg, target_save_dir, loader_train)
 
     # * train the model
     model = UNet(cfg)
@@ -59,10 +59,10 @@ def train_app(cfg: Config) -> None:
         log.info(
             f"[#{iepoch}], loss_mean:{res['loss_mean']}, {res['loss'] = }")
         # * show first epoch
-        # if iepoch == 0:
-        #     init_save_dir = join(FIG_DIR, "test_train_simple", "init")
-        #     show_info_batch(cfg, init_save_dir, loader_train,
-        #                     predict=res['predict'])
+        if iepoch == 0:
+            init_save_dir = join(FIG_DIR, "test_train_simple", "init")
+            show_info_batch(cfg, init_save_dir, loader_train,
+                            predict=res['predict'])
 
     # * show the final plot
     final_save_dir = join(FIG_DIR, "test_train_simple", "final")

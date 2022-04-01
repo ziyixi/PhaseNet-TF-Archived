@@ -46,7 +46,8 @@ class GenLabel:
 
 
 class GenSgram(Spectrogram):
-    def __init__(self, n_fft: int, hop_length: int, power: int, window_fn: str, freqmin: float, freqmax: float, sampling_rate: int, height: int, width: int, device: torch.device) -> None:
+    def __init__(self, n_fft: int, hop_length: int, power: int, window_fn: str, freqmin: float, freqmax: float, sampling_rate: int, height: int, width: int, max_clamp: int, device: torch.device) -> None:
+        # since Spectrogram has no params, we don't need to set it as no_grad
         window_fn_maper = {
             "hann": torch.hann_window
         }
@@ -65,6 +66,7 @@ class GenSgram(Spectrogram):
         self.sampling_rate = sampling_rate
         self.height = height
         self.width = width
+        self.max_clamp = max_clamp
         self.device = device
 
     def __call__(self, sample: Dict) -> Dict:
@@ -79,6 +81,7 @@ class GenSgram(Spectrogram):
         sgram = sgram[:, freqmin_pos:freqmax_pos+1, :-1]
         # resize
         sgram = F.resize(sgram, [self.height, self.width])
+        sgram = torch.clamp_max(sgram, self.max_clamp)
         sample['sgram'] = sgram
         return sample
 

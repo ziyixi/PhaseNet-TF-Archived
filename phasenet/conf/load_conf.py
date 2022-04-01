@@ -54,6 +54,7 @@ class SpectrogramConfig:
     sampling_rate: int = 40
     height: int = 64
     width: int = 4800  # should equal to win_len*sampling_rate
+    max_clamp: int = 50
 
 
 @dataclass
