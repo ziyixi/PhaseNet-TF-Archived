@@ -41,7 +41,7 @@ class PreprocessConfig:
     # random shift
     width: int = 4800
     # stack
-    stack_ratio: float = 0.99
+    stack_ratio: float = 0.6
     min_stack_gap: int = 100
 
 
