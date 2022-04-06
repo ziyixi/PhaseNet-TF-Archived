@@ -10,13 +10,44 @@ import torchvision.transforms.functional as F
 from torchaudio.transforms import Spectrogram
 
 
+class RandomShift:
+    def __init__(self, width: int, buffer_width: int) -> None:
+        self.width = width
+        self.buffer_width = buffer_width
+
+    def __call__(self, sample: Dict) -> Dict:
+        data, arrivals = sample['data'], sample['arrivals']
+        # determine the shift range
+        left_bound = torch.min(arrivals)
+        if left_bound < self.buffer_width:
+            left_bound = 0
+        else:
+            left_bound = -(left_bound-self.buffer_width)
+        right_bound = self.width-torch.max(arrivals)
+        if right_bound < self.buffer_width:
+            right_bound = 0
+        else:
+            right_bound = right_bound-self.buffer_width
+        # update arrivals
+        shift = torch.randint(left_bound, right_bound, (1,)).item()
+        for i in range(len(arrivals)):
+            arrivals[i] += shift
+        # update data
+        data = data.roll(shift, dims=1)
+        sample.update({
+            'data': data,
+            'arrivals': arrivals
+        })
+        return sample
+
+
 class GenLabel:
     def __init__(self, label_shape: str = "gaussian", label_width: int = 120) -> None:
         self.label_shape = label_shape
         self.label_width = label_width
 
     def __call__(self, sample: Dict) -> Dict:
-        data, arrivals, key = sample['data'], sample['arrivals'], sample['key']
+        data, arrivals = sample['data'], sample['arrivals']
         res = torch.zeros(len(arrivals)+1, data.shape[1])
         if self.label_shape == "gaussian":
             label_window = torch.exp(-(torch.arange(-self.label_width //
@@ -37,12 +68,12 @@ class GenLabel:
             if start >= 0 and end <= res.shape[1]:
                 res[i+1, start:end] = label_window
         res[0, :] = 1-torch.sum(res, 0)
-        return {
+        sample.update({
             "data": data,
             "label": res,
-            "key": key,
             "arrivals": arrivals
-        }
+        })
+        return sample
 
 
 class GenSgram(Spectrogram):
@@ -82,7 +113,9 @@ class GenSgram(Spectrogram):
         # resize
         sgram = F.resize(sgram, [self.height, self.width])
         sgram = torch.clamp_max(sgram, self.max_clamp)
-        sample['sgram'] = sgram
+        sample.update({
+            'sgram': sgram
+        })
         return sample
 
 

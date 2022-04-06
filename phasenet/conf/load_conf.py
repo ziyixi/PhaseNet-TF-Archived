@@ -38,6 +38,9 @@ class PreprocessConfig:
     filter_freqmax: float = 10.
     filter_corners: int = 4
     filter_zerophase: bool = False
+    # random shift
+    width: int = 4800
+    buffer_width: int = 60  # should be label_width//2
 
 
 @dataclass

@@ -10,7 +10,7 @@ from phasenet.conf.load_conf import Config
 from phasenet.core.train import (criterion, get_optimizer, get_scheduler,
                                  train_one_epoch)
 from phasenet.data.dataset import WaveFormDataset
-from phasenet.data.transforms import GenLabel, GenSgram, ScaleAmp
+from phasenet.data.transforms import GenLabel, GenSgram, ScaleAmp, RandomShift
 from phasenet.model.unet import UNet
 from phasenet.utils.seed import setup_seed
 from phasenet.utils.visualize import show_info_batch
@@ -32,13 +32,15 @@ def train_app(cfg: Config) -> None:
     log.info(f"using {device = }")
 
     # * load data
+    trans_shift = RandomShift(
+        width=cfg.preprocess.width, buffer_width=cfg.preprocess.buffer_width)
     trans_label = GenLabel(
         label_shape=cfg.preprocess.label_shape, label_width=cfg.preprocess.label_width)
     trans_scale = ScaleAmp(max_amp=1, global_max=True)
     trans_sgram = GenSgram(n_fft=cfg.spectrogram.n_fft, hop_length=cfg.spectrogram.hop_length, power=cfg.spectrogram.power, window_fn=cfg.spectrogram.window_fn,
                            freqmin=cfg.spectrogram.freqmin, freqmax=cfg.spectrogram.freqmax, sampling_rate=cfg.spectrogram.sampling_rate,
                            height=cfg.spectrogram.height, width=cfg.spectrogram.width, max_clamp=cfg.spectrogram.max_clamp, device=device)
-    composed = Compose([trans_label, trans_scale, trans_sgram])
+    composed = Compose([trans_shift, trans_label, trans_scale, trans_sgram])
     data_train = WaveFormDataset(
         cfg, data_type="load_train", transform=composed, progress=True, debug=True, debug_dict={'size': 8})
     # data_train.save(cfg.data.load_train)
