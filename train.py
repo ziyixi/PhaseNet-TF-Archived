@@ -12,7 +12,7 @@ from phasenet.core.train import (criterion, get_optimizer, get_scheduler,
                                  train_one_epoch)
 from phasenet.core.test import test_one_epoch
 from phasenet.data.dataset import WaveFormDataset
-from phasenet.data.transforms import GenLabel, GenSgram, RandomShift, ScaleAmp
+from phasenet.data.transforms import GenLabel, GenSgram, RandomShift, ScaleAmp, StackRand
 from phasenet.model.unet import UNet
 from phasenet.utils.seed import setup_seed
 from phasenet.utils.visualize import show_info_batch
@@ -36,18 +36,20 @@ def train_app(cfg: Config) -> None:
     log.info(f"using {device = }")
 
     # * load data
+    trans_scale = ScaleAmp(max_amp=1, global_max=True)
     trans_shift = RandomShift(width=cfg.preprocess.width)
     trans_label = GenLabel(
         label_shape=cfg.preprocess.label_shape, label_width=cfg.preprocess.label_width)
-    trans_scale = ScaleAmp(max_amp=1, global_max=True)
+    trans_stack = StackRand(stack_ratio=cfg.preprocess.stack_ratio,
+                            min_stack_gap=cfg.preprocess.min_stack_gap)
     trans_sgram = GenSgram(n_fft=cfg.spectrogram.n_fft, hop_length=cfg.spectrogram.hop_length, power=cfg.spectrogram.power, window_fn=cfg.spectrogram.window_fn,
                            freqmin=cfg.spectrogram.freqmin, freqmax=cfg.spectrogram.freqmax, sampling_rate=cfg.spectrogram.sampling_rate,
                            height=cfg.spectrogram.height, width=cfg.spectrogram.width, max_clamp=cfg.spectrogram.max_clamp, device=device)
 
     data_train = WaveFormDataset(
-        cfg, data_type="load_train", transform=Compose([trans_scale, trans_shift, trans_label, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
+        cfg, data_type="load_train", transform=Compose([trans_scale, trans_shift, trans_label, trans_stack, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
     data_test = WaveFormDataset(
-        cfg, data_type="load_test", transform=Compose([trans_scale, trans_shift, trans_label, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
+        cfg, data_type="load_test", transform=Compose([trans_scale, trans_shift, trans_label, trans_stack, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
     # data_train.save(cfg.data.load_train)
     loader_train = DataLoader(data_train, batch_size=2, shuffle=False)
     loader_test = DataLoader(data_test, batch_size=2, shuffle=False)

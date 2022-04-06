@@ -123,11 +123,17 @@ class WaveFormDataset(Dataset):
     def __getitem__(self, idx: int) -> Dict:
         # dict
         key = self.wave_keys[idx]
+        # random one
+        random_idx = torch.randint(len(self.data), (1,)).item()
+        random_key = self.wave_keys[random_idx]
         # sample = (self.data[key], self.label[key])
         sample = {
             "data": self.data[key],
             "arrivals": self.label[key],
-            "key": key
+            "key": key,
+            "random_data": self.data[random_key],
+            "random_arrivals": self.label[random_key],
+            "random_key": random_key
         }
         if self.transform:
             sample = self.transform(sample)

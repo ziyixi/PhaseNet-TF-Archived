@@ -40,6 +40,9 @@ class PreprocessConfig:
     filter_zerophase: bool = False
     # random shift
     width: int = 4800
+    # stack
+    stack_ratio: float = 0.99
+    min_stack_gap: int = 100
 
 
 @dataclass
