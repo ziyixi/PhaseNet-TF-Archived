@@ -20,6 +20,7 @@ tqdm = "^4.63.1"
 matplotlib = "^3.5.1"
 torchaudio = "^0.11.0"
 numpy = "^1.22.3"
+tensorboard = "^2.8.0"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.13.1"
@@ -30,6 +31,7 @@ click = "^8.0.4"
 loguru = "^0.6.0"
 pandas = "^1.4.1"
 torchinfo = "^1.6.5"
+torch-tb-profiler = "^0.4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
