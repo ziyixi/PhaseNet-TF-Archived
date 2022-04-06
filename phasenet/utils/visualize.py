@@ -61,8 +61,11 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         for i in range(3):
             if global_max:
                 i = 0
-            vmax.append(torch.max(sgram[i][:, p_arrival+sampling_rate *
-                                  5:p_arrival+sampling_rate*15]))
+            if p_arrival+sampling_rate * 5 >= 0 and p_arrival+sampling_rate*15 <= sgram.shape[-1]:
+                vmax.append(torch.max(sgram[i][:, p_arrival+sampling_rate *
+                                               5:p_arrival+sampling_rate*15]))
+            else:
+                vmax.append(30)
         max_scale = torch.max(torch.abs(data))
         # R component
         axes[0].plot(x, data[0, :], c="black", lw=1, label="R")
@@ -85,13 +88,15 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
             axes[6].plot(x, label[i+1, :].numpy(), '--',
                          c=color[i], label=each_phase[1:])
             for idx in [0, 2, 4]:
-                axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=-max_scale,
-                                 ymax=max_scale, colors=color[i], ls='--', lw=1)
+                if 0 < arrivals[i] < sgram.shape[-1]:
+                    axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=-max_scale,
+                                     ymax=max_scale, colors=color[i], ls='--', lw=1)
                 axes[idx].margins(0)
                 axes[idx].set_ylabel('Amplitude', fontsize=18)
             for idx in [1, 3, 5]:
-                axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=freq_range[0],
-                                 ymax=freq_range[1], colors=color[i], ls='--', lw=1)
+                if 0 < arrivals[i] < sgram.shape[-1]:
+                    axes[idx].vlines(x=arrivals[i]/sampling_rate, ymin=freq_range[0],
+                                     ymax=freq_range[1], colors=color[i], ls='--', lw=1)
                 axes[idx].set_ylabel('Frequency (HZ)', fontsize=18)
         axes[6].plot(x, label[0, :].numpy(), '--',
                      c="black", label="Noise")

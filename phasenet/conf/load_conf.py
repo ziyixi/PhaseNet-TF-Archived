@@ -40,7 +40,6 @@ class PreprocessConfig:
     filter_zerophase: bool = False
     # random shift
     width: int = 4800
-    buffer_width: int = 60  # should be label_width//2
 
 
 @dataclass

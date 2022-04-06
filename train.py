@@ -36,8 +36,7 @@ def train_app(cfg: Config) -> None:
     log.info(f"using {device = }")
 
     # * load data
-    trans_shift = RandomShift(
-        width=cfg.preprocess.width, buffer_width=cfg.preprocess.buffer_width)
+    trans_shift = RandomShift(width=cfg.preprocess.width)
     trans_label = GenLabel(
         label_shape=cfg.preprocess.label_shape, label_width=cfg.preprocess.label_width)
     trans_scale = ScaleAmp(max_amp=1, global_max=True)
@@ -46,9 +45,9 @@ def train_app(cfg: Config) -> None:
                            height=cfg.spectrogram.height, width=cfg.spectrogram.width, max_clamp=cfg.spectrogram.max_clamp, device=device)
 
     data_train = WaveFormDataset(
-        cfg, data_type="load_train", transform=Compose([trans_shift, trans_label, trans_scale, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
+        cfg, data_type="load_train", transform=Compose([trans_scale, trans_shift, trans_label, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
     data_test = WaveFormDataset(
-        cfg, data_type="load_test", transform=Compose([trans_shift, trans_label, trans_scale, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
+        cfg, data_type="load_test", transform=Compose([trans_scale, trans_shift, trans_label, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
     # data_train.save(cfg.data.load_train)
     loader_train = DataLoader(data_train, batch_size=2, shuffle=False)
     loader_test = DataLoader(data_test, batch_size=2, shuffle=False)

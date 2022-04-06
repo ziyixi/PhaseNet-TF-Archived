@@ -11,24 +11,15 @@ from torchaudio.transforms import Spectrogram
 
 
 class RandomShift:
-    def __init__(self, width: int, buffer_width: int) -> None:
+    def __init__(self, width: int) -> None:
         self.width = width
-        self.buffer_width = buffer_width
 
     def __call__(self, sample: Dict) -> Dict:
         sample_updated = sample.copy()
         data, arrivals = sample_updated['data'], sample_updated['arrivals']
         # determine the shift range
-        left_bound = torch.min(arrivals)
-        if left_bound < self.buffer_width:
-            left_bound = 0
-        else:
-            left_bound = -(left_bound-self.buffer_width)
-        right_bound = self.width-torch.max(arrivals)
-        if right_bound < self.buffer_width:
-            right_bound = 0
-        else:
-            right_bound = right_bound-self.buffer_width
+        left_bound = -torch.max(arrivals)
+        right_bound = self.width-torch.min(arrivals)
         # update arrivals
         shift = torch.randint(left_bound, right_bound, (1,)).item()
         arrivals_shifted = arrivals.clone()
@@ -36,6 +27,10 @@ class RandomShift:
             arrivals_shifted[i] += shift
         # update data
         data_shifted = data.roll(shift, dims=1)
+        if shift >= 0:
+            data_shifted[:, :shift] = 0
+        else:
+            data_shifted[:, shift:] = 0
         sample_updated.update({
             'data': data_shifted,
             'arrivals': arrivals_shifted
