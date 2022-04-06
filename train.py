@@ -48,7 +48,7 @@ def train_app(cfg: Config) -> None:
     data_train = WaveFormDataset(
         cfg, data_type="load_train", transform=Compose([trans_shift, trans_label, trans_scale, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
     data_test = WaveFormDataset(
-        cfg, data_type="load_test", transform=Compose([trans_label, trans_scale, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
+        cfg, data_type="load_test", transform=Compose([trans_shift, trans_label, trans_scale, trans_sgram]), progress=True, debug=True, debug_dict={'size': 8})
     # data_train.save(cfg.data.load_train)
     loader_train = DataLoader(data_train, batch_size=2, shuffle=False)
     loader_test = DataLoader(data_test, batch_size=2, shuffle=False)
