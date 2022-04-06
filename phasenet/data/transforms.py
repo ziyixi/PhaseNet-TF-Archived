@@ -16,7 +16,8 @@ class RandomShift:
         self.buffer_width = buffer_width
 
     def __call__(self, sample: Dict) -> Dict:
-        data, arrivals = sample['data'], sample['arrivals']
+        sample_updated = sample.copy()
+        data, arrivals = sample_updated['data'], sample_updated['arrivals']
         # determine the shift range
         left_bound = torch.min(arrivals)
         if left_bound < self.buffer_width:
@@ -30,15 +31,16 @@ class RandomShift:
             right_bound = right_bound-self.buffer_width
         # update arrivals
         shift = torch.randint(left_bound, right_bound, (1,)).item()
+        arrivals_shifted = arrivals.clone()
         for i in range(len(arrivals)):
-            arrivals[i] += shift
+            arrivals_shifted[i] += shift
         # update data
-        data = data.roll(shift, dims=1)
-        sample.update({
-            'data': data,
-            'arrivals': arrivals
+        data_shifted = data.roll(shift, dims=1)
+        sample_updated.update({
+            'data': data_shifted,
+            'arrivals': arrivals_shifted
         })
-        return sample
+        return sample_updated
 
 
 class GenLabel:
@@ -47,7 +49,8 @@ class GenLabel:
         self.label_width = label_width
 
     def __call__(self, sample: Dict) -> Dict:
-        data, arrivals = sample['data'], sample['arrivals']
+        sample_updated = sample.copy()
+        data, arrivals = sample_updated['data'], sample_updated['arrivals']
         res = torch.zeros(len(arrivals)+1, data.shape[1])
         if self.label_shape == "gaussian":
             label_window = torch.exp(-(torch.arange(-self.label_width //
@@ -68,12 +71,10 @@ class GenLabel:
             if start >= 0 and end <= res.shape[1]:
                 res[i+1, start:end] = label_window
         res[0, :] = 1-torch.sum(res, 0)
-        sample.update({
-            "data": data,
-            "label": res,
-            "arrivals": arrivals
+        sample_updated.update({
+            "label": res
         })
-        return sample
+        return sample_updated
 
 
 class GenSgram(Spectrogram):
@@ -101,7 +102,8 @@ class GenSgram(Spectrogram):
         self.device = device
 
     def __call__(self, sample: Dict) -> Dict:
-        data: torch.Tensor = sample['data'].to(self.device)
+        sample_updated = sample.copy()
+        data: torch.Tensor = sample_updated['data'].to(self.device)
         sgram: torch.Tensor = super().__call__(data)
         # sgram: torch.Tensor = self.func(data)
         # we should cut the frequency between freqmin to freqmax
@@ -113,10 +115,10 @@ class GenSgram(Spectrogram):
         # resize
         sgram = F.resize(sgram, [self.height, self.width])
         sgram = torch.clamp_max(sgram, self.max_clamp)
-        sample.update({
+        sample_updated.update({
             'sgram': sgram
         })
-        return sample
+        return sample_updated
 
 
 class ScaleAmp:
@@ -125,7 +127,8 @@ class ScaleAmp:
         self.global_max = global_max
 
     def __call__(self, sample: Dict) -> Dict:
-        data: torch.Tensor = sample['data']
+        sample_updated = sample.copy()
+        data: torch.Tensor = sample_updated['data'].clone()
         if self.global_max:
             raw_max = torch.max(torch.abs(data))
             data = data/raw_max
@@ -133,5 +136,7 @@ class ScaleAmp:
             for ich in range(data.shape[0]):
                 raw_max = torch.max(torch.abs(data[ich]))
                 data[ich, :] = data[ich, :]/raw_max
-        sample['data'] = data
-        return sample
+        sample_updated.update({
+            'data': data
+        })
+        return sample_updated
