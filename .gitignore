@@ -144,3 +144,4 @@ figs/
 test_scripts/
 train_dev.py
 runs/
+.DS_Store

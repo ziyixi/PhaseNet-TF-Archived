@@ -5,4 +5,5 @@ defaults:
   - spectrogram: sample
   - model: sample
   - train: local
+  - profile: sample
   - _self_

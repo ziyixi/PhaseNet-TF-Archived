@@ -94,6 +94,17 @@ class TrainConfig:
 
 
 @dataclass
+class ProfileConfig:
+    """
+    the profiling configuration
+    """
+    wait: int = 1
+    warmup: int = 1
+    active: int = 3
+    repeat: int = 2
+
+
+@dataclass
 class Config:
     """
     the configuration for the project
@@ -103,6 +114,7 @@ class Config:
     spectrogram: SpectrogramConfig = MISSING
     model: ModelConfig = MISSING
     train: TrainConfig = MISSING
+    profile: ProfileConfig = MISSING
 
 
 cs = ConfigStore.instance()
@@ -112,3 +124,4 @@ cs.store(group="preprocess", name="base_preprocess", node=PreprocessConfig)
 cs.store(group="spectrogram", name="base_spectrogram", node=SpectrogramConfig)
 cs.store(group="model", name="base_model", node=ModelConfig)
 cs.store(group="train", name="base_train", node=TrainConfig)
+cs.store(group="profile", name="base_profile", node=ProfileConfig)
