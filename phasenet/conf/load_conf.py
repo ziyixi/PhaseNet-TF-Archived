@@ -112,6 +112,7 @@ class TrainConfig:
     train_batch_size: int = 32
     test_batch_size: int = 32
     train_shuffle: bool = True
+    use_amp: bool = True
 
 
 @dataclass
