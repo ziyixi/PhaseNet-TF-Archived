@@ -5,3 +5,4 @@ epochs: 50
 train_batch_size: 32
 test_batch_size: 32
 train_shuffle: true
+device: cuda:3
