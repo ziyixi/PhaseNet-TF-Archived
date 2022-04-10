@@ -1,0 +1,11 @@
+defaults:
+  - base_visualize
+
+fig_dir: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/figs
+target_dir: ${.fig_dir}/target
+init_dir: ${.fig_dir}/init
+final_dir: ${.fig_dir}/final
+save_target: true
+save_init: true
+save_final: true
+log_predict: true

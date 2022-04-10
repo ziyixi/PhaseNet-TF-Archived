@@ -3,6 +3,7 @@ visualize.py
 
 helper functions to visualzie the dataset and model.
 """
+import os
 from os.path import join
 from typing import List, Optional, TypedDict
 
@@ -116,6 +117,8 @@ def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, p
         data_loader (DataLoader): the data loader of the dataset to plot
         predict (Optional[torch.Tensor]): the optional prediction tensor (if None, plot target instead)
     """
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
     for ibatch, each_batch in enumerate(data_loader):
         show_info(each_batch, phases=cfg.data.phases,  save_dir=save_directory, sampling_rate=cfg.spectrogram.sampling_rate, x_range=[0, cfg.preprocess.win_length], freq_range=[
                   cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=predict[ibatch] if predict else None)

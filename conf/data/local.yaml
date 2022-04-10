@@ -10,3 +10,5 @@ phases:
   - TP
   - TS
   - TPS
+data_debug: true
+data_debug_size: 8

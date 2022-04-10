@@ -20,6 +20,11 @@ class DataConfig:
     load_train: str = MISSING
     load_test: str = MISSING
     phases: List[str] = MISSING
+    data_debug: bool = False
+    data_debug_size: int = 8
+    save_dataset: bool = False
+    train_data_type: str = "load_train"
+    test_data_type: str = "load_test"
 
 
 @dataclass
@@ -27,9 +32,11 @@ class PreprocessConfig:
     """
     preprocess for the dataset and dataloader
     """
+    # cut win in dataset
     win_length: float = 120.
     left_extend: float = 10.
     right_extend: float = 110.
+    # label
     label_shape: str = "gaussian"
     label_width: int = 120
     # signal processing
@@ -43,6 +50,14 @@ class PreprocessConfig:
     # stack
     stack_ratio: float = 0.6
     min_stack_gap: int = 100
+    # scale
+    scale_max_amp: float = 1.0
+    scale_global_max: bool = True
+    # train transforms
+    train_trans: List[str] = field(default_factory=lambda: [
+                                   "scale", "shift", "label", "stack", "sgram"])
+    test_trans: List[str] = field(default_factory=lambda: [
+        "scale", "shift", "label", "sgram"])
 
 
 @dataclass
@@ -87,10 +102,16 @@ class TrainConfig:
     """
     teh trainning configuration
     """
+    use_random_seed: bool = True
+    random_seed: int = 666
     learning_rate: float = 0.01
     weight_decay: float = 1e-4
     epochs: int = 20
     lr_warmup_epochs: int = 0
+    device: str = "cpu"
+    train_batch_size: int = 32
+    test_batch_size: int = 32
+    train_shuffle: bool = True
 
 
 @dataclass
@@ -105,6 +126,21 @@ class ProfileConfig:
 
 
 @dataclass
+class VisualizeConfig:
+    """
+    the visualization configuration
+    """
+    fig_dir: str = MISSING
+    target_dir: str = MISSING
+    init_dir: str = MISSING
+    final_dir: str = MISSING
+    save_target: bool = False
+    save_init: bool = False
+    save_final: bool = False
+    log_predict: bool = False
+
+
+@dataclass
 class Config:
     """
     the configuration for the project
@@ -115,6 +151,7 @@ class Config:
     model: ModelConfig = MISSING
     train: TrainConfig = MISSING
     profile: ProfileConfig = MISSING
+    visualize: VisualizeConfig = MISSING
 
 
 cs = ConfigStore.instance()
@@ -125,3 +162,4 @@ cs.store(group="spectrogram", name="base_spectrogram", node=SpectrogramConfig)
 cs.store(group="model", name="base_model", node=ModelConfig)
 cs.store(group="train", name="base_train", node=TrainConfig)
 cs.store(group="profile", name="base_profile", node=ProfileConfig)
+cs.store(group="visualize", name="base_visualize", node=VisualizeConfig)

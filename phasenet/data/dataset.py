@@ -125,6 +125,9 @@ class WaveFormDataset(Dataset):
         key = self.wave_keys[idx]
         # random one
         random_idx = torch.randint(len(self.data), (1,)).item()
+        while random_idx == idx:
+            # need regenerate if the same
+            random_idx = torch.randint(len(self.data), (1,)).item()
         random_key = self.wave_keys[random_idx]
         # sample = (self.data[key], self.label[key])
         sample = {

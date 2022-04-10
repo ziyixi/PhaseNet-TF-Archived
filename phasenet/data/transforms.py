@@ -8,11 +8,12 @@ from typing import Dict
 import torch
 import torchvision.transforms.functional as F
 from torchaudio.transforms import Spectrogram
+from phasenet.conf.load_conf import PreprocessConfig, SpectrogramConfig
 
 
 class RandomShift:
-    def __init__(self, width: int) -> None:
-        self.width = width
+    def __init__(self, cfg_preprocess: PreprocessConfig) -> None:
+        self.width = cfg_preprocess.width
 
     def __call__(self, sample: Dict) -> Dict:
         sample_data = self.shift(sample, "data", "arrivals")
@@ -45,9 +46,9 @@ class RandomShift:
 
 
 class GenLabel:
-    def __init__(self, label_shape: str = "gaussian", label_width: int = 120) -> None:
-        self.label_shape = label_shape
-        self.label_width = label_width
+    def __init__(self, cfg_preprocess: PreprocessConfig) -> None:
+        self.label_shape = cfg_preprocess.label_shape
+        self.label_width = cfg_preprocess.label_width
 
     def __call__(self, sample: Dict) -> Dict:
         sample_data = self.label(sample, "data", "arrivals", "label")
@@ -77,6 +78,7 @@ class GenLabel:
             end = idx+self.label_width//2+1
             if start >= 0 and end <= res.shape[1]:
                 res[i+1, start:end] = label_window
+        # can sum as the first row is 0
         res[0, :] = 1-torch.sum(res, 0)
         sample_updated.update({
             label_key: res
@@ -85,9 +87,9 @@ class GenLabel:
 
 
 class StackRand:
-    def __init__(self, stack_ratio: float, min_stack_gap: int) -> None:
-        self.stack_ratio = stack_ratio
-        self.min_stack_gap = min_stack_gap
+    def __init__(self, cfg_preprocess: PreprocessConfig) -> None:
+        self.stack_ratio = cfg_preprocess.stack_ratio
+        self.min_stack_gap = cfg_preprocess.min_stack_gap
 
     def __call__(self, sample: Dict) -> Dict:
         # * stack data / label
@@ -104,6 +106,10 @@ class StackRand:
         # handle stacking
         stack_data = data+random_data
         stack_label = label+random_label
+        # * here we have to scale the poss to 1 for signals and recalculate the noise
+        stack_label = torch.clamp_max(stack_label, 1.0)
+        stack_label[0, :] = 1-torch.sum(stack_label[1:], 0)
+
         sample_updated.update({
             'data': stack_data,
             'label': stack_label
@@ -112,27 +118,28 @@ class StackRand:
 
 
 class GenSgram(Spectrogram):
-    def __init__(self, n_fft: int, hop_length: int, power: int, window_fn: str, freqmin: float, freqmax: float, sampling_rate: int, height: int, width: int, max_clamp: int, device: torch.device) -> None:
+    def __init__(self, cfg_spectrogram: SpectrogramConfig, device: torch.device) -> None:
         # since Spectrogram has no params, we don't need to set it as no_grad
         window_fn_maper = {
             "hann": torch.hann_window
         }
-        if window_fn in window_fn_maper:
-            win = window_fn_maper[window_fn]
+        if cfg_spectrogram.window_fn in window_fn_maper:
+            win = window_fn_maper[cfg_spectrogram.window_fn]
         else:
             raise Exception(
-                f"Unsupportd windows func {window_fn}. Avaliable candiates are {list(window_fn_maper.keys())}. Try to use the supported func name instead.")
-        super().__init__(n_fft=n_fft, hop_length=hop_length, power=power, window_fn=win)
+                f"Unsupportd windows func {cfg_spectrogram.window_fn}. Avaliable candiates are {list(window_fn_maper.keys())}. Try to use the supported func name instead.")
+        super().__init__(n_fft=cfg_spectrogram.n_fft,
+                         hop_length=cfg_spectrogram.hop_length, power=cfg_spectrogram.power, window_fn=win)
         super().to(device)
         # self.func = partial(spectrogram, n_fft=n_fft,
         #                     hop_length=hop_length, power=power, window_fn=win)
-        self.n_fft = n_fft
-        self.freqmin = freqmin
-        self.freqmax = freqmax
-        self.sampling_rate = sampling_rate
-        self.height = height
-        self.width = width
-        self.max_clamp = max_clamp
+        self.n_fft = cfg_spectrogram.n_fft
+        self.freqmin = cfg_spectrogram.freqmin
+        self.freqmax = cfg_spectrogram.freqmax
+        self.sampling_rate = cfg_spectrogram.sampling_rate
+        self.height = cfg_spectrogram.height
+        self.width = cfg_spectrogram.width
+        self.max_clamp = cfg_spectrogram.max_clamp
         self.device = device
 
     def __call__(self, sample: Dict) -> Dict:
@@ -156,9 +163,9 @@ class GenSgram(Spectrogram):
 
 
 class ScaleAmp:
-    def __init__(self, max_amp: float = 1, global_max: bool = True) -> None:
-        self.max_amp = max_amp
-        self.global_max = global_max
+    def __init__(self, cfg_preprocess: PreprocessConfig) -> None:
+        self.max_amp = cfg_preprocess.scale_max_amp
+        self.global_max = cfg_preprocess.scale_global_max
 
     def __call__(self, sample: Dict) -> Dict:
         sample_data = self.scale(sample, "data")
