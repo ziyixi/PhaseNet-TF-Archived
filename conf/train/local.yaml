@@ -5,3 +5,4 @@ epochs: 3
 train_batch_size: 2
 test_batch_size: 2
 train_shuffle: false
+use_amp: false

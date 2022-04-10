@@ -12,8 +12,10 @@ def train_one_epoch(model: nn.Module,
                     optimizer: torch.optim.Optimizer,
                     data_loader: DataLoader,
                     lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
+                    use_amp: bool,
                     device: torch.device,
-                    log_predict: bool = False) -> Optional[dict]:
+                    log_predict: bool = False,
+                    scaler: Optional[torch.cuda.amp.GradScaler] = None) -> Optional[dict]:
     model.train()
     loss_log = []
     if log_predict:
@@ -21,18 +23,34 @@ def train_one_epoch(model: nn.Module,
     for meta in data_loader:
         # * forward
         sgram, target = meta['sgram'].to(device), meta['label'].to(device)
-        output = model(sgram)
-        predict = output['predict']
-        loss = criterion(predict, target)
+        if use_amp:
+            with torch.cuda.amp.autocast(enabled=True):
+                output = model(sgram)
+                predict = output['predict']
+                loss = criterion(predict, target)
+        else:
+            output = model(sgram)
+            predict = output['predict']
+            loss = criterion(predict, target)
         loss_log.append(loss.detach().item())
         if log_predict:
             predict_log.append(
                 torch.nn.functional.softmax(predict.detach(), dim=1))
         # * backward
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        lr_scheduler.step()
+        if use_amp:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scale = scaler.get_scale()
+            scaler.update()
+            # refer to https://discuss.pytorch.org/t/optimizer-step-before-lr-scheduler-step-error-using-gradscaler/92930/8
+            skip_lr_sched = (scale > scaler.get_scale())
+            if not skip_lr_sched:
+                lr_scheduler.step()
+        else:
+            loss.backward()
+            optimizer.step()
+            lr_scheduler.step()
 
     res = {
         "loss": loss_log,

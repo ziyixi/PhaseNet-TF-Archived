@@ -14,6 +14,7 @@ from phasenet.data.dataset import WaveFormDataset
 from phasenet.data.transforms import (GenLabel, GenSgram, RandomShift,
                                       ScaleAmp, StackRand)
 from phasenet.model.unet import UNet
+from phasenet.utils.helper import get_git_revision_short_hash
 from phasenet.utils.seed import setup_seed
 from phasenet.utils.visualize import show_info_batch
 
@@ -23,6 +24,7 @@ def train_app(cfg: Config) -> None:
     # * logger
     writer = SummaryWriter()
     log = logging.getLogger(__name__)
+    log.info(f"current git hash {get_git_revision_short_hash()}")
 
     # * Set random number seed
     if cfg.train.use_random_seed:
@@ -64,10 +66,14 @@ def train_app(cfg: Config) -> None:
     model.to(device)
     optimizer = get_optimizer(model.parameters(), cfg.train)
     main_lr_scheduler = get_scheduler(optimizer, len(loader_train), cfg.train)
+    scaler = torch.cuda.amp.GradScaler() if cfg.train.use_amp else None
     for iepoch in range(cfg.train.epochs):
+        log_predict = False if (
+            iepoch != 0 and iepoch != cfg.train.epochs-1) else cfg.visualize.log_predict
         res = train_one_epoch(model, criterion, optimizer,
-                              loader_train, main_lr_scheduler, device=device, log_predict=False if (iepoch != 0 and iepoch != cfg.train.epochs-1) else cfg.visualize.log_predict)
-        res_test = test_one_epoch(model, criterion, loader_test, device=device)
+                              loader_train, main_lr_scheduler, use_amp=cfg.train.use_amp, device=device, log_predict=log_predict, scaler=scaler)
+        res_test = test_one_epoch(model, criterion, loader_test,
+                                  use_amp=cfg.train.use_amp, device=device)
         writer.add_scalar('Loss/train', res['loss_mean'], iepoch)
         writer.add_scalar('Loss/test', res_test['loss_mean'], iepoch)
         log.info(
