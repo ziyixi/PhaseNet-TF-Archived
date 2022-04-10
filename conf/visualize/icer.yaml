@@ -9,3 +9,4 @@ save_target: true
 save_init: true
 save_final: true
 log_predict: true
+example_num: 16

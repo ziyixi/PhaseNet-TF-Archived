@@ -59,7 +59,8 @@ def train_app(cfg: Config) -> None:
 
     # * show the target
     if cfg.visualize.save_target:
-        show_info_batch(cfg, cfg.visualize.target_dir, loader_train)
+        show_info_batch(cfg, cfg.visualize.target_dir,
+                        loader_train, example_num=cfg.visualize.example_num)
 
     # * train the model
     model = UNet(cfg)
@@ -81,12 +82,12 @@ def train_app(cfg: Config) -> None:
         # * show first epoch
         if iepoch == 0 and cfg.visualize.save_init and cfg.visualize.log_predict:
             show_info_batch(cfg, cfg.visualize.init_dir, loader_train,
-                            predict=res['predict'])
+                            predict=res['predict'], example_num=cfg.visualize.example_num)
 
     # * show the final plot
     if cfg.visualize.save_final and cfg.visualize.log_predict:
         show_info_batch(cfg, cfg.visualize.final_dir,
-                        loader_train, predict=res['predict'])
+                        loader_train, predict=res['predict'], example_num=cfg.visualize.example_num)
 
     # * exist log
     writer.close()
