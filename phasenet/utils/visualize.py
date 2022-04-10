@@ -24,7 +24,7 @@ class BatchInput(TypedDict):
     label: torch.Tensor
 
 
-def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, sampling_rate: int, x_range: List[int], freq_range: List[int], merge: bool = False, global_max: bool = False, progress: bool = False, predict: Optional[torch.Tensor] = None) -> None:
+def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, sampling_rate: int, x_range: List[int], freq_range: List[int], merge: bool = False, global_max: bool = False, cur_example_num: int = 0, progress: bool = False, predict: Optional[torch.Tensor] = None) -> None:
     """show input dataset and save to pdf files
 
     Args:
@@ -36,6 +36,7 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         freq_range (List[int]): the freq axis range
         merge (bool): if merge to a single pdf file, the name will be input.pdf
         global_max (bool): for sgram, if use the same vmax value for three components
+        cur_example_num (int): how many pdfs to generate in total
         progress (bool): if show the progress bar
     """
     data_batch, arrivals_batch, key_batch, sgram_batch, label_batch = input_batch[
@@ -49,6 +50,8 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
     if progress:
         prange = tqdm(prange, desc="Plotting")
     for ibatch in prange:
+        if ibatch >= cur_example_num:
+            break
         # generate figures for each ibatch
         data, arrivals, key, sgram, label = data_batch[ibatch], arrivals_batch[
             ibatch], key_batch[ibatch], sgram_batch[ibatch], label_batch[ibatch]
@@ -108,7 +111,7 @@ def show_info(input_batch: BatchInput, phases: List[str], save_dir: str, samplin
         plt.close(fig)
 
 
-def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, predict: Optional[torch.Tensor] = None) -> None:
+def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, predict: Optional[torch.Tensor] = None, example_num: int = 8) -> None:
     """Save pdf showing the results for all the batches
 
     Args:
@@ -119,6 +122,11 @@ def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, p
     """
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
+    batch_size = cfg.train.train_batch_size
     for ibatch, each_batch in enumerate(data_loader):
+        if ibatch*batch_size >= example_num:
+            continue
+        cur_example_num = example_num-ibatch * \
+            batch_size if (ibatch+1)*batch_size >= example_num else batch_size
         show_info(each_batch, phases=cfg.data.phases,  save_dir=save_directory, sampling_rate=cfg.spectrogram.sampling_rate, x_range=[0, cfg.preprocess.win_length], freq_range=[
-                  cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, predict=predict[ibatch] if predict else None)
+                  cfg.spectrogram.freqmin, cfg.spectrogram.freqmax], progress=False, global_max=False, cur_example_num=cur_example_num, predict=predict[ibatch] if predict else None)

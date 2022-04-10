@@ -139,6 +139,7 @@ class VisualizeConfig:
     save_init: bool = False
     save_final: bool = False
     log_predict: bool = False
+    example_num: int = 8
 
 
 @dataclass
