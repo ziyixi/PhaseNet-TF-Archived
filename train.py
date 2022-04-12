@@ -27,25 +27,27 @@ from phasenet.utils.visualize import show_info_batch
 
 @hydra.main(config_path="conf", config_name="config")
 def train_app(cfg: Config) -> None:
+    # * logger
+    # see discussion https://github.com/facebookresearch/hydra/issues/1126
+    # we have to put it outside the spawned processes
+    log = logging.getLogger(__name__)
+    writer = SummaryWriter()
+    log.info(f"current git hash {get_git_revision_short_hash()}")
+    # * spawn
     if cfg.train.distributed:
         mp.spawn(train_app_distribute,
-                 args=(cfg,),
+                 args=(cfg, log, writer),
                  nprocs=len(cfg.train.distributed_devices),
                  join=True)
     else:
-        train_app_distribute(0, cfg)
+        train_app_distribute(0, cfg, log, writer)
 
 
-def train_app_distribute(rank: int, cfg: Config):
+def train_app_distribute(rank: int, cfg: Config, log: logging.Logger, writer: SummaryWriter):
     # * spawn
     if cfg.train.distributed:
         setup_distribute(rank, len(cfg.train.distributed_devices),
                          cfg.train.distributed_master_port)
-    # * logger
-    if rank == 0:
-        log = logging.getLogger(__name__)
-        writer = SummaryWriter()
-        log.info(f"current git hash {get_git_revision_short_hash()}")
 
     # * Set random number seed
     if cfg.train.use_random_seed:
