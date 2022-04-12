@@ -43,6 +43,7 @@ def train_app_distribute(rank: int, cfg: Config):
     if cfg.train.distributed:
         setup_distribute(rank, len(cfg.train.distributed_devices),
                          cfg.train.distributed_master_port)
+
     # * loggers
     if rank == 0:
         writer = SummaryWriter()
