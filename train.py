@@ -3,7 +3,7 @@ import logging
 import hydra
 import torch
 import torch.multiprocessing as mp
-from torch.distributed import reduce, ReduceOp
+from torch.distributed import ReduceOp, reduce
 from torch.nn import SyncBatchNorm
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -21,33 +21,33 @@ from phasenet.data.transforms import (GenLabel, GenSgram, RandomShift,
 from phasenet.model.unet import UNet
 from phasenet.utils.distribute import cleanup_distribute, setup_distribute
 from phasenet.utils.helper import get_git_revision_short_hash
+from phasenet.utils.logger import get_logger
 from phasenet.utils.seed import setup_seed
 from phasenet.utils.visualize import show_info_batch
 
 
 @hydra.main(config_path="conf", config_name="config")
 def train_app(cfg: Config) -> None:
-    # * logger
-    # see discussion https://github.com/facebookresearch/hydra/issues/1126
-    # we have to put it outside the spawned processes
-    log = logging.getLogger(__name__)
-    writer = SummaryWriter()
-    log.info(f"current git hash {get_git_revision_short_hash()}")
     # * spawn
     if cfg.train.distributed:
         mp.spawn(train_app_distribute,
-                 args=(cfg, log, writer),
+                 args=(cfg,),
                  nprocs=len(cfg.train.distributed_devices),
                  join=True)
     else:
-        train_app_distribute(0, cfg, log, writer)
+        train_app_distribute(0, cfg)
 
 
-def train_app_distribute(rank: int, cfg: Config, log: logging.Logger, writer: SummaryWriter):
+def train_app_distribute(rank: int, cfg: Config):
     # * spawn
     if cfg.train.distributed:
         setup_distribute(rank, len(cfg.train.distributed_devices),
                          cfg.train.distributed_master_port)
+    # * loggers
+    if rank == 0:
+        writer = SummaryWriter()
+        log = get_logger(__name__)
+        log.info(f"current git hash {get_git_revision_short_hash()}")
 
     # * Set random number seed
     if cfg.train.use_random_seed:
@@ -148,7 +148,8 @@ def train_app_distribute(rank: int, cfg: Config, log: logging.Logger, writer: Su
                         loader_train, predict=res['predict'], example_num=cfg.visualize.example_num)
 
     # * exist log
-    writer.close()
+    if rank == 0:
+        writer.close()
 
     # * spawn
     if cfg.train.distributed:
