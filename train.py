@@ -1,5 +1,3 @@
-import logging
-
 import hydra
 import torch
 import torch.multiprocessing as mp
