@@ -120,8 +120,8 @@ def show_info_batch(cfg: Config, save_directory: str, data_loader: DataLoader, p
         data_loader (DataLoader): the data loader of the dataset to plot
         predict (Optional[torch.Tensor]): the optional prediction tensor (if None, plot target instead)
     """
-    if not os.path.exists(save_directory):
-        os.makedirs(save_directory)
+    # https://stackoverflow.com/questions/42544885/error-when-mkdir-in-multi-threads-in-python
+    os.makedirs(save_directory, exist_ok=True)  # race condition free
     batch_size = cfg.train.train_batch_size
     for ibatch, each_batch in enumerate(data_loader):
         if ibatch*batch_size >= example_num:

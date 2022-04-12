@@ -17,7 +17,7 @@ def train_one_epoch(model: nn.Module,
                     log_predict: bool = False,
                     scaler: Optional[torch.cuda.amp.GradScaler] = None) -> Optional[dict]:
     model.train()
-    loss_log = []
+    loss_log = 0.0
     if log_predict:
         predict_log = []
     for meta in data_loader:
@@ -32,7 +32,9 @@ def train_one_epoch(model: nn.Module,
             output = model(sgram)
             predict = output['predict']
             loss = criterion(predict, target)
-        loss_log.append(loss.detach().item())
+        # refer to https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306
+        # the loss is only for a single GPU in distributed mode
+        loss_log += loss.detach().item()
         if log_predict:
             predict_log.append(
                 torch.nn.functional.softmax(predict.detach(), dim=1))
@@ -53,8 +55,7 @@ def train_one_epoch(model: nn.Module,
             lr_scheduler.step()
 
     res = {
-        "loss": loss_log,
-        "loss_mean": np.mean(loss_log),
+        "loss_mean": loss_log,
     }
     if log_predict:
         res['predict'] = predict_log

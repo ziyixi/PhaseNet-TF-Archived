@@ -13,7 +13,7 @@ def test_one_epoch(model: nn.Module,
                    device: torch.device,
                    log_predict: bool = False) -> Optional[dict]:
     model.eval()
-    loss_log = []
+    loss_log = 0.0
     if log_predict:
         predict_log = []
     with torch.inference_mode():
@@ -29,14 +29,13 @@ def test_one_epoch(model: nn.Module,
                 output = model(sgram)
                 predict = output['predict']
                 loss = criterion(predict, target)
-            loss_log.append(loss.detach().item())
+            loss_log += loss.detach().item()
             if log_predict:
                 predict_log.append(
                     torch.nn.functional.softmax(predict.detach(), dim=1))
 
     res = {
-        "loss": loss_log,
-        "loss_mean": np.mean(loss_log),
+        "loss_mean": loss_log,
     }
     if log_predict:
         res['predict'] = predict_log

@@ -110,9 +110,13 @@ class TrainConfig:
     lr_warmup_epochs: int = 0
     device: str = "cpu"
     train_batch_size: int = 32
-    test_batch_size: int = 32
+    test_batch_size: int = 1
     train_shuffle: bool = True
     use_amp: bool = True
+    distributed: bool = False  # will ignore device
+    distributed_devices: List[int] = field(
+        default_factory=lambda: [0, 1, 2, 3])
+    distributed_master_port: int = 12356
 
 
 @dataclass
