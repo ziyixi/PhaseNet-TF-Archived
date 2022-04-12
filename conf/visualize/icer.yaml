@@ -5,8 +5,8 @@ fig_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/figs
 target_dir: ${.fig_dir}/target
 init_dir: ${.fig_dir}/init
 final_dir: ${.fig_dir}/final
-save_target: true
-save_init: true
-save_final: true
-log_predict: true
+save_target: false
+save_init: false
+save_final: false
+log_predict: false
 example_num: 16

@@ -1,8 +1,9 @@
 defaults:
   - base_train
 
-epochs: 50
+epochs: 200
 train_batch_size: 32
 test_batch_size: 32
 train_shuffle: true
-device: cuda:3
+device: cuda:2
+use_amp: false
