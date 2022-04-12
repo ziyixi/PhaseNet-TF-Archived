@@ -124,8 +124,10 @@ def train_app_distribute(rank: int, cfg: Config):
         train_loss_mean = res['loss_mean']
         test_loss_mean = res_test['loss_mean']
         if cfg.train.distributed:
-            train_loss_mean = reduce(train_loss_mean, 0, ReduceOp.SUM)
-            test_loss_mean = reduce(test_loss_mean, 0, ReduceOp.SUM)
+            train_loss_mean = reduce(
+                train_loss_mean, 0, ReduceOp.SUM)/len(cfg.train.distributed_devices)
+            test_loss_mean = reduce(
+                test_loss_mean, 0, ReduceOp.SUM)/len(cfg.train.distributed_devices)
 
         if rank == 0:
             writer.add_scalar('Loss/train', train_loss_mean, iepoch)

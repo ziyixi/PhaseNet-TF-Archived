@@ -35,7 +35,7 @@ def test_one_epoch(model: nn.Module,
                     torch.nn.functional.softmax(predict.detach(), dim=1))
 
     res = {
-        "loss_mean": loss_log,
+        "loss_mean": loss_log/len(test_loader),
     }
     if log_predict:
         res['predict'] = predict_log

@@ -55,7 +55,7 @@ def train_one_epoch(model: nn.Module,
             lr_scheduler.step()
 
     res = {
-        "loss_mean": loss_log,
+        "loss_mean": loss_log/len(data_loader),
     }
     if log_predict:
         res['predict'] = predict_log
