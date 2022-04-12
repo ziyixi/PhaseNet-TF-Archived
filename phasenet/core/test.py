@@ -1,6 +1,5 @@
-from typing import Callable, Iterator, Optional
+from typing import Callable, Optional
 
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -13,7 +12,7 @@ def test_one_epoch(model: nn.Module,
                    device: torch.device,
                    log_predict: bool = False) -> Optional[dict]:
     model.eval()
-    loss_log = 0.0
+    loss_log = torch.zeros(1, device=device)
     if log_predict:
         predict_log = []
     with torch.inference_mode():
@@ -29,7 +28,7 @@ def test_one_epoch(model: nn.Module,
                 output = model(sgram)
                 predict = output['predict']
                 loss = criterion(predict, target)
-            loss_log += loss.detach().item()
+            loss_log += loss.detach()
             if log_predict:
                 predict_log.append(
                     torch.nn.functional.softmax(predict.detach(), dim=1))

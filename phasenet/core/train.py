@@ -1,6 +1,5 @@
 from typing import Callable, Iterator, Optional
 
-import numpy as np
 import torch
 import torch.nn as nn
 from phasenet.conf.load_conf import TrainConfig
@@ -17,7 +16,7 @@ def train_one_epoch(model: nn.Module,
                     log_predict: bool = False,
                     scaler: Optional[torch.cuda.amp.GradScaler] = None) -> Optional[dict]:
     model.train()
-    loss_log = 0.0
+    loss_log = torch.zeros(1, device=device)
     if log_predict:
         predict_log = []
     for meta in data_loader:
@@ -34,7 +33,7 @@ def train_one_epoch(model: nn.Module,
             loss = criterion(predict, target)
         # refer to https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306
         # the loss is only for a single GPU in distributed mode
-        loss_log += loss.detach().item()
+        loss_log += loss.detach()
         if log_predict:
             predict_log.append(
                 torch.nn.functional.softmax(predict.detach(), dim=1))

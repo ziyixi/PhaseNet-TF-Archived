@@ -106,7 +106,7 @@ def train_app_distribute(rank: int, cfg: Config):
     if cfg.train.distributed:
         model = SyncBatchNorm.convert_sync_batchnorm(model)
         model = DistributedDataParallel(
-            model, device_ids=device, output_device=device)
+            model, device_ids=[device], output_device=device)
 
     optimizer = get_optimizer(model.parameters(), cfg.train)
     main_lr_scheduler = get_scheduler(optimizer, len(loader_train), cfg.train)
@@ -124,16 +124,17 @@ def train_app_distribute(rank: int, cfg: Config):
         train_loss_mean = res['loss_mean']
         test_loss_mean = res_test['loss_mean']
         if cfg.train.distributed:
-            train_loss_mean = reduce(
-                train_loss_mean, 0, ReduceOp.SUM)/len(cfg.train.distributed_devices)
-            test_loss_mean = reduce(
-                test_loss_mean, 0, ReduceOp.SUM)/len(cfg.train.distributed_devices)
+            reduce(train_loss_mean, 0, ReduceOp.SUM)
+            reduce(test_loss_mean, 0, ReduceOp.SUM)
+            if rank == 0:
+                train_loss_mean /= len(cfg.train.distributed_devices)
+                test_loss_mean /= len(cfg.train.distributed_devices)
 
         if rank == 0:
-            writer.add_scalar('Loss/train', train_loss_mean, iepoch)
-            writer.add_scalar('Loss/test', test_loss_mean, iepoch)
+            writer.add_scalar('Loss/train', train_loss_mean.item(), iepoch)
+            writer.add_scalar('Loss/test', test_loss_mean.item(), iepoch)
             log.info(
-                f"[#{iepoch}], train loss:{train_loss_mean}, test loss:{test_loss_mean}")
+                f"[#{iepoch}], train loss:{train_loss_mean.item()}, test loss:{test_loss_mean.item()}")
         # * show first epoch
         if iepoch == 0 and cfg.visualize.save_init and cfg.visualize.log_predict:
             show_info_batch(cfg, cfg.visualize.init_dir, loader_train,
