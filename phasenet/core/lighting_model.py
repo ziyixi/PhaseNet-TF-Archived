@@ -63,13 +63,13 @@ class PhaseNetModel(pl.LightningModule):
         predict = output['predict']
         loss = self._criterion(predict, label)
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
-        self.log_dict({"Loss/train": loss, "step": self.current_epoch + 1}, on_step=False,
+        self.log_dict({"Loss/train": loss, "step": self.current_epoch + 1.0}, on_step=False,
                       on_epoch=True, batch_size=len(wave), prog_bar=True)
         return loss
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss = self._shared_eval_step(batch, batch_idx)
-        self.log_dict({"Loss/validation": loss, "step": self.current_epoch + 1}, on_step=False,
+        self.log_dict({"Loss/validation": loss, "step": self.current_epoch + 1.0}, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), prog_bar=True)
         return loss
 
@@ -122,9 +122,5 @@ class PhaseNetModel(pl.LightningModule):
         batches = min(batches, limit_batches) if isinstance(
             limit_batches, int) else int(limit_batches * batches)
 
-        num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
-        if self.trainer.tpu_cores:
-            num_devices = max(num_devices, self.trainer.tpu_cores)
-
-        effective_accum = self.trainer.accumulate_grad_batches * num_devices
+        effective_accum = self.trainer.accumulate_grad_batches * self.trainer.num_devices
         return (batches // effective_accum) * self.trainer.max_epochs
