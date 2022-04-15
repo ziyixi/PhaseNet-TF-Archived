@@ -63,14 +63,14 @@ class PhaseNetModel(pl.LightningModule):
         predict = output['predict']
         loss = self._criterion(predict, label)
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
-        self.log("Loss/train", loss, on_step=False,
-                 on_epoch=True, batch_size=len(wave), prog_bar=True)
+        self.log_dict({"Loss/train": loss, "step": self.current_epoch + 1}, on_step=False,
+                      on_epoch=True, batch_size=len(wave), prog_bar=True)
         return loss
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss = self._shared_eval_step(batch, batch_idx)
-        self.log("Loss/validation", loss, on_step=False,
-                 on_epoch=True, batch_size=len(batch['data']), prog_bar=True)
+        self.log_dict({"Loss/validation": loss, "step": self.current_epoch + 1}, on_step=False,
+                      on_epoch=True, batch_size=len(batch['data']), prog_bar=True)
         return loss
 
     def test_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
@@ -99,7 +99,7 @@ class PhaseNetModel(pl.LightningModule):
         )
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer,
-            lambda x: (1 - x / self.trainer.estimated_stepping_batches) ** 0.9,
+            lambda x: (1 - x / self.num_training_steps) ** 0.9,
         )
         return {
             "optimizer": optimizer,
@@ -108,3 +108,23 @@ class PhaseNetModel(pl.LightningModule):
                 "interval": "step"
             }
         }
+
+    @property
+    def num_training_steps(self) -> int:
+        """Total training steps inferred from datamodule and devices."""
+        # from https://github.com/PyTorchLightning/pytorch-lightning/issues/5449
+        if self.trainer.max_steps != -1:
+            return self.trainer.max_steps
+
+        limit_batches = self.trainer.limit_train_batches
+        batches = len(
+            self.trainer._data_connector._train_dataloader_source.dataloader())
+        batches = min(batches, limit_batches) if isinstance(
+            limit_batches, int) else int(limit_batches * batches)
+
+        num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
+        if self.trainer.tpu_cores:
+            num_devices = max(num_devices, self.trainer.tpu_cores)
+
+        effective_accum = self.trainer.accumulate_grad_batches * num_devices
+        return (batches // effective_accum) * self.trainer.max_epochs

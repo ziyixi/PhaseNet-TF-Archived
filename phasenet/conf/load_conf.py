@@ -113,6 +113,7 @@ class TrainConfig:
     limit_train_batches: Optional[int] = None
     limit_val_batches: Optional[int] = None
     limit_test_batches: Optional[int] = None
+    log_every_n_steps: int = 20
 
 
 @dataclass

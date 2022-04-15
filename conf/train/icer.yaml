@@ -3,8 +3,10 @@ defaults:
 
 epochs: 100
 accelerator: gpu
-use_amp: true
+use_amp: false
+strategy: ddp
 distributed_devices:
+  - 0
   - 1
   - 2
   - 3

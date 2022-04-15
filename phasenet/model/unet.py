@@ -153,8 +153,9 @@ class UNet(nn.Module):
         # prepare result
         result = {}
         # due to kernel size, the out's nt might not be the exact nt
-        result["predict"] = F.interpolate(
-            out, size=nt, mode='linear', align_corners=False)
+        # result["predict"] = F.interpolate(
+        #     out, size=nt, mode='linear', align_corners=False)
+        result["predict"] = out
         return result
 
     @staticmethod

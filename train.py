@@ -8,8 +8,13 @@ from phasenet.core.lighting_model import PhaseNetModel
 from phasenet.data.lighting_data import WaveFormDataModule
 from phasenet.model.unet import UNet
 
+# * ignores
 warnings.filterwarnings(
     "ignore", ".*Consider increasing the value of the `num_workers` argument*")
+warnings.filterwarnings(
+    "ignore", ".*Failure to do this will result in PyTorch skipping the first value*")
+warnings.filterwarnings(
+    "ignore", ".*During `trainer.test()`, it is recommended to use `Trainer(devices=1)`*")
 
 
 @hydra.main(config_path="conf", config_name="config")
@@ -38,6 +43,7 @@ def train_app(cfg: Config) -> None:
             train_conf.limit_val_batches if train_conf.limit_val_batches else None),
         limit_test_batches=(
             train_conf.limit_test_batches if train_conf.limit_test_batches else None),
+        log_every_n_steps=train_conf.log_every_n_steps
     )
     # * train and val
     light_data.setup(stage="fit")
