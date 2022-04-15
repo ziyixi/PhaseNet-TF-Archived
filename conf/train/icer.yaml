@@ -2,12 +2,8 @@ defaults:
   - base_train
 
 epochs: 100
-train_batch_size: 32
-test_batch_size: 1
-train_shuffle: true
-device: cuda:3
+accelerator: gpu
 use_amp: true
-distributed: true 
 distributed_devices:
   - 1
   - 2

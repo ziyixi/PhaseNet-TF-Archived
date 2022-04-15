@@ -1,14 +1,17 @@
 defaults:
   - base_data
 
-train: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset/tongaml_train.h5
-test: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset/tongaml_test.h5
-load_train: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset/tongaml_train.pt
-load_test: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset/tongaml_test.pt
+data_dir: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset
+train: tongaml_train.h5
+test: tongaml_test.h5
+val: tongaml_val.h5
 
 phases:
   - TP
   - TS
   - TPS
-data_debug: true
-data_debug_size: 8
+
+train_batch_size: 4
+val_batch_size: 4
+test_batch_size: 4
+train_shuffle: false

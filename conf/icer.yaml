@@ -4,7 +4,6 @@ hydra:
 defaults:
   - base_config
   - data: icer
-  - preprocess: sample
   - spectrogram: sample
   - model: sample
   - train: icer

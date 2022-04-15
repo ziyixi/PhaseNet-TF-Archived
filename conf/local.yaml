@@ -4,7 +4,6 @@ hydra:
 defaults:
   - base_config
   - data: local
-  - preprocess: sample
   - spectrogram: sample
   - model: sample
   - train: local

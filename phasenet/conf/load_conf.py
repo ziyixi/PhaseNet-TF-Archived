@@ -4,7 +4,7 @@ load_conf.py
 load configuration files for the project.
 """
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 from hydra.core.config_store import ConfigStore
 from omegaconf import MISSING
@@ -15,23 +15,12 @@ class DataConfig:
     """
     the dataset path configuration 
     """
+    # data path
+    data_dir: str = MISSING
     train: str = MISSING
     test: str = MISSING
-    load_train: str = MISSING
-    load_test: str = MISSING
+    val: str = MISSING
     phases: List[str] = MISSING
-    data_debug: bool = False
-    data_debug_size: int = 8
-    save_dataset: bool = False
-    train_data_type: str = "load_train"
-    test_data_type: str = "load_test"
-
-
-@dataclass
-class PreprocessConfig:
-    """
-    preprocess for the dataset and dataloader
-    """
     # cut win in dataset
     win_length: float = 120.
     left_extend: float = 10.
@@ -45,7 +34,7 @@ class PreprocessConfig:
     filter_freqmax: float = 10.
     filter_corners: int = 4
     filter_zerophase: bool = False
-    # random shift
+    # win length
     width: int = 4800
     # stack
     stack_ratio: float = 0.6
@@ -53,11 +42,20 @@ class PreprocessConfig:
     # scale
     scale_max_amp: float = 1.0
     scale_global_max: bool = True
-    # train transforms
+    # transforms
     train_trans: List[str] = field(default_factory=lambda: [
-                                   "scale", "shift", "label", "stack", "sgram"])
+                                   "scale", "shift", "label", "stack"])
+    val_trans: List[str] = field(default_factory=lambda: [
+        "scale", "shift", "label"])
     test_trans: List[str] = field(default_factory=lambda: [
-        "scale", "shift", "label", "sgram"])
+        "scale", "shift", "label"])
+    # batch size
+    train_batch_size: int = 32
+    val_batch_size: int = 1
+    test_batch_size: int = 1
+    train_shuffle: bool = True
+    # workers
+    num_workers: int = 2
 
 
 @dataclass
@@ -107,16 +105,14 @@ class TrainConfig:
     learning_rate: float = 0.01
     weight_decay: float = 1e-4
     epochs: int = 20
-    lr_warmup_epochs: int = 0
-    device: str = "cpu"
-    train_batch_size: int = 32
-    test_batch_size: int = 1
-    train_shuffle: bool = True
+    accelerator: str = "cpu"
+    strategy: Optional[str] = None
     use_amp: bool = True
-    distributed: bool = False  # will ignore device
     distributed_devices: List[int] = field(
         default_factory=lambda: [0, 1, 2, 3])
-    distributed_master_port: int = 12356
+    limit_train_batches: Optional[int] = None
+    limit_val_batches: Optional[int] = None
+    limit_test_batches: Optional[int] = None
 
 
 @dataclass
@@ -152,7 +148,6 @@ class Config:
     the configuration for the project
     """
     data: DataConfig = MISSING
-    preprocess: PreprocessConfig = MISSING
     spectrogram: SpectrogramConfig = MISSING
     model: ModelConfig = MISSING
     train: TrainConfig = MISSING
@@ -163,7 +158,6 @@ class Config:
 cs = ConfigStore.instance()
 cs.store(name="base_config", node=Config)
 cs.store(group="data", name="base_data", node=DataConfig)
-cs.store(group="preprocess", name="base_preprocess", node=PreprocessConfig)
 cs.store(group="spectrogram", name="base_spectrogram", node=SpectrogramConfig)
 cs.store(group="model", name="base_model", node=ModelConfig)
 cs.store(group="train", name="base_train", node=TrainConfig)

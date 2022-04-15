@@ -8,14 +8,13 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from phasenet.conf.load_conf import Config
+from phasenet.conf.load_conf import ModelConfig
 
 
 class UNet(nn.Module):
-    def __init__(self, cfg: Config):
+    def __init__(self, cfg_model: ModelConfig):
         super().__init__()
         # * modle feature
-        cfg_model = cfg.model
         self._out_features = ["out"]
         self._out_feature_channels = {"out": cfg_model.out_channels}
         self._out_feature_strides = {"out": 1}
