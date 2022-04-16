@@ -2,6 +2,7 @@ import warnings
 
 import hydra
 from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.callbacks import LearningRateMonitor
 
 from phasenet.conf.load_conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
@@ -27,8 +28,11 @@ def train_app(cfg: Config) -> None:
     light_model = PhaseNetModel(UNet, cfg)
     light_data = WaveFormDataModule(cfg.data)
     light_data.prepare_data()
+    # * callbacks
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')  # monitor lr
     # * prepare trainner
     trainer = Trainer(
+        callbacks=[lr_monitor],
         accelerator=train_conf.accelerator,
         deterministic=train_conf.use_random_seed,
         devices=(
