@@ -91,6 +91,9 @@ class PhaseNetModel(pl.LightningModule):
         loss = nn.functional.kl_div(
             torch.nn.functional.log_softmax(inputs, dim=1), target, reduction='batchmean',
         )
+        # change to mean, as reduction='mean' has been depreciated
+        # shape, bt ch nt
+        loss = loss/(inputs.shape[1]*inputs.shape[2])
         return loss
 
     def configure_optimizers(self):
