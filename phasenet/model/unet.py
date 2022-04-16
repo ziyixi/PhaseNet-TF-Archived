@@ -148,6 +148,8 @@ class UNet(nn.Module):
 
         out = self.conv(dec1)
         # change out from nt,1 to nt
+        # so here the out will be bt, ch, nt
+        # we design nt to be npts, so no need to upsampling
         out = out.squeeze(-1)
 
         # prepare result
