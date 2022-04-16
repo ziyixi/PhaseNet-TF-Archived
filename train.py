@@ -43,7 +43,8 @@ def train_app(cfg: Config) -> None:
             train_conf.limit_val_batches if train_conf.limit_val_batches else None),
         limit_test_batches=(
             train_conf.limit_test_batches if train_conf.limit_test_batches else None),
-        log_every_n_steps=train_conf.log_every_n_steps
+        log_every_n_steps=train_conf.log_every_n_steps,
+        # num_sanity_val_steps=0 # used only when debug
     )
     # * train and val
     light_data.setup(stage="fit")
