@@ -8,4 +8,5 @@ strategy: ddp
 distributed_devices:
   - 0
   - 1
+  - 2
   - 3

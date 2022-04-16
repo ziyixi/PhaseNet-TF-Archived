@@ -114,6 +114,7 @@ class TrainConfig:
     limit_val_batches: Optional[int] = None
     limit_test_batches: Optional[int] = None
     log_every_n_steps: int = 20
+    sync_batchnorm: bool = True
 
 
 @dataclass
