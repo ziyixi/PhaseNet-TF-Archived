@@ -4,5 +4,5 @@ defaults:
 epochs: 3
 use_amp: false
 limit_train_batches: 2
-limit_val_batches: 2
-limit_test_batches: 2
+limit_val_batches: 4
+limit_test_batches: 4

@@ -12,17 +12,16 @@ from matplotlib.pyplot import cm
 
 
 class VisualizeInfo:
-    def __init__(self, phases: List[str], sampling_rate: int, x_range: List[int], freq_range: List[int], global_max: bool = False, sgram_threshold: Optional[int] = None, cur_example_num: int = 0) -> None:
+    def __init__(self, phases: List[str], sampling_rate: int, x_range: List[int], freq_range: List[int], global_max: bool = False, sgram_threshold: Optional[int] = None) -> None:
         self.phases = phases
         self.sampling_rate = sampling_rate
         self.x_range = x_range
         self.freq_range = freq_range
         self.global_max = global_max
         self.sgram_threshold = sgram_threshold
-        self.cur_example_num = cur_example_num
 
-    def __call__(self, input_batch: Dict, sgram_batch: torch.Tensor,  predict_batch: torch.Tensor) -> Optional[List[plt.Figure]]:
-        if self.cur_example_num == 0:
+    def __call__(self, input_batch: Dict, sgram_batch: torch.Tensor,  predict_batch: torch.Tensor, cur_example_num: int = 0) -> Optional[List[plt.Figure]]:
+        if cur_example_num == 0:
             return None
         figs = []
         # * load data
@@ -35,7 +34,7 @@ class VisualizeInfo:
 
         # * plot each batch
         batch_size = data_batch.shape[0]
-        for ibatch in range(min(batch_size, self.cur_example_num)):
+        for ibatch in range(min(batch_size, cur_example_num)):
             # * prepare
             # generate figures for each ibatch
             data, arrivals, key, sgram, label, predict = data_batch[ibatch], arrivals_batch[

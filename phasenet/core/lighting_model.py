@@ -21,7 +21,7 @@ class PhaseNetModel(pl.LightningModule):
         # define the model
         self.sgram_trans = GenSgram(self.spec_conf)
         self.model = model(self.model_conf)
-        # loggers
+        # log figures
         self.show_figs = VisualizeInfo(
             phases=conf.data.phases,
             sampling_rate=conf.spectrogram.sampling_rate,
@@ -29,8 +29,10 @@ class PhaseNetModel(pl.LightningModule):
             freq_range=[conf.spectrogram.freqmin, conf.spectrogram.freqmax],
             global_max=False,
             sgram_threshold=conf.visualize.sgram_threshold,
-            cur_example_num=conf.visualize.example_num
         )
+        self.figs_train_store = []
+        self.figs_val_store = []
+        self.figs_test_store = []
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         # training_step defined the train loop.
@@ -110,37 +112,82 @@ class PhaseNetModel(pl.LightningModule):
 
     @rank_zero_only
     def _log_figs_train(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor) -> None:
-        if batch_idx == 0 and self.visualize.log_train:
-            if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0):
+        if not self.visualize.log_train:
+            return
+        if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0):
+            batch_size = len(sgram)
+            finished_examples = batch_size*batch_idx
+            if finished_examples < self.visualize.example_num:
+                if finished_examples+batch_size < self.visualize.example_num:
+                    example_this_batch = batch_size
+                    last_step = False
+                else:
+                    example_this_batch = self.visualize.example_num-finished_examples
+                    last_step = True
+
                 predict_freq = torch.nn.functional.softmax(predict, dim=1)
-                figs = self.show_figs(batch, sgram, predict_freq)
-                tensorboard: SummaryWriter = self.logger.experiment
-                if self.current_epoch == self.trainer.max_epochs-1:
-                    tag = "train/final"
-                elif self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0:
-                    tag = f"train/epoch{self.current_epoch+1}"
-                tensorboard.add_figure(
-                    tag, figs, global_step=self.current_epoch+1)
+                figs = self.show_figs(
+                    batch, sgram, predict_freq, example_this_batch)
+                self.figs_train_store.extend(figs)
+                if last_step:
+                    tensorboard: SummaryWriter = self.logger.experiment
+                    if self.current_epoch == self.trainer.max_epochs-1:
+                        tag = "train/final"
+                    elif self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0:
+                        tag = f"train/epoch{self.current_epoch+1}"
+                    tensorboard.add_figure(
+                        tag, self.figs_train_store, global_step=self.current_epoch+1)
+                    self.figs_train_store = []
 
     @rank_zero_only
     def _log_figs_val(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor) -> None:
-        if batch_idx == 0 and self.visualize.log_val:
-            if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0):
+        if not self.visualize.log_val:
+            return
+        if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0):
+            batch_size = len(sgram)
+            finished_examples = batch_size*batch_idx
+            if finished_examples < self.visualize.example_num:
+                if finished_examples+batch_size < self.visualize.example_num:
+                    example_this_batch = batch_size
+                    last_step = False
+                else:
+                    example_this_batch = self.visualize.example_num-finished_examples
+                    last_step = True
+
                 predict_freq = torch.nn.functional.softmax(predict, dim=1)
-                figs = self.show_figs(batch, sgram, predict_freq)
-                tensorboard: SummaryWriter = self.logger.experiment
-                if self.current_epoch == self.trainer.max_epochs-1:
-                    tag = "validation/final"
-                elif self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0:
-                    tag = f"validation/epoch{self.current_epoch+1}"
-                tensorboard.add_figure(
-                    tag, figs, global_step=self.current_epoch+1)
+                figs = self.show_figs(
+                    batch, sgram, predict_freq, example_this_batch)
+                self.figs_val_store.extend(figs)
+                if last_step:
+                    tensorboard: SummaryWriter = self.logger.experiment
+                    if self.current_epoch == self.trainer.max_epochs-1:
+                        tag = "validation/final"
+                    elif self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0:
+                        tag = f"validation/epoch{self.current_epoch+1}"
+                    tensorboard.add_figure(
+                        tag, self.figs_val_store, global_step=self.current_epoch+1)
+                    self.figs_val_store = []
 
     @rank_zero_only
     def _log_figs_test(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor) -> None:
-        if batch_idx == 0 and self.visualize.log_test:
+        if not self.visualize.log_test:
+            return
+        batch_size = len(sgram)
+        finished_examples = batch_size*batch_idx
+        if finished_examples < self.visualize.example_num:
+            if finished_examples+batch_size < self.visualize.example_num:
+                example_this_batch = batch_size
+                last_step = False
+            else:
+                example_this_batch = self.visualize.example_num-finished_examples
+                last_step = True
+
             predict_freq = torch.nn.functional.softmax(predict, dim=1)
-            figs = self.show_figs(batch, sgram, predict_freq)
-            tensorboard: SummaryWriter = self.logger.experiment
-            tensorboard.add_figure(
-                "test/final", figs, global_step=self.current_epoch+1)
+            figs = self.show_figs(
+                batch, sgram, predict_freq, example_this_batch)
+            self.figs_test_store.extend(figs)
+            if last_step:
+                tensorboard: SummaryWriter = self.logger.experiment
+                tensorboard.add_figure(
+                    "test/final", self.figs_test_store, global_step=self.current_epoch+1)
+                self.figs_test_store = []
