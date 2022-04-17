@@ -1,7 +1,7 @@
 defaults:
   - base_train
 
-epochs: 2
+epochs: 3
 use_amp: false
 limit_train_batches: 2
 limit_val_batches: 2

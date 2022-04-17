@@ -133,15 +133,15 @@ class VisualizeConfig:
     """
     the visualization configuration
     """
-    fig_dir: str = MISSING
-    target_dir: str = MISSING
-    init_dir: str = MISSING
-    final_dir: str = MISSING
-    save_target: bool = False
-    save_init: bool = False
-    save_final: bool = False
-    log_predict: bool = False
     example_num: int = 8
+    # considered first, if so, will log final and also consider log_epoch
+    log_train: bool = False
+    log_val: bool = False
+    log_test: bool = False
+    # if log every several epochs
+    log_epoch: Optional[int] = None
+    # figs
+    sgram_threshold: Optional[int] = None
 
 
 @dataclass

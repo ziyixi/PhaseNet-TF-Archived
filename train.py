@@ -49,7 +49,7 @@ def train_app(cfg: Config) -> None:
             train_conf.limit_test_batches if train_conf.limit_test_batches else None),
         log_every_n_steps=train_conf.log_every_n_steps,
         sync_batchnorm=train_conf.sync_batchnorm,
-        # num_sanity_val_steps=0 # used only when debug
+        num_sanity_val_steps=0,  # no need to do this check outside development
     )
     # * train and val
     light_data.setup(stage="fit")
