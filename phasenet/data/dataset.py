@@ -45,6 +45,7 @@ class WaveFormDataset(Dataset):
         # left and right, comparing with data, nearby
         self.left_data: Dict[str, torch.Tensor] = {}
         self.right_data: Dict[str, torch.Tensor] = {}
+        self.noise_data: Dict[str, torch.Tensor] = {}
         self.label: Dict[str, torch.Tensor] = {}
         self.wave_keys: List[str] = []
 
@@ -106,6 +107,8 @@ class WaveFormDataset(Dataset):
             3, int(sampling_rate*self.data_conf.win_length))
         right_res = torch.zeros(
             3, int(sampling_rate*self.data_conf.win_length))
+        noise_res = torch.zeros(
+            3, int(sampling_rate*self.data_conf.win_length))
         components = ["R", "T", "Z"]
         for i in range(3):
             trace = stream.select(component=components[i])[0]
@@ -125,15 +128,25 @@ class WaveFormDataset(Dataset):
                 starttime=left_signal_start, endtime=left_signal_end)
             right_wave = trace.slice(
                 starttime=right_signal_start, endtime=right_signal_end)
+            noise_wave = trace.slice(
+                starttime=trace.stats.endtime-self.data_conf.win_length, endtime=trace.stats.endtime)
             # to torch
             wave_data = torch.from_numpy(
                 wave.data)
             res[i, :] = wave_data[:res.shape[1]]
+            noise_data = torch.from_numpy(
+                noise_wave.data)
+            noise_res[i, :] = noise_data[:noise_res.shape[1]]
             # left wave might not be that long, we need to fill the noise to avoid abrupt jump
             left_wave_data = torch.from_numpy(left_wave.data)
-            repeat_times = left_res.shape[1]//len(left_wave_data)+1
-            left_wave_data = left_wave_data.repeat(repeat_times)
-            left_res[i, :] = left_wave_data[-left_res.shape[1]:]
+            if self.data_conf.avoid_first_ten_seconds:
+                left_wave_data = left_wave_data[int(10*sampling_rate):]
+            if len(left_wave_data) > 0:
+                left_res[i, -len(left_wave_data):] = left_wave_data[:]
+                left_res[i, :-len(left_wave_data)
+                         ] = noise_res[i, :-len(left_wave_data)]
+            else:
+                left_res[i, :] = noise_res[i, :]
             # right wave is reliable
             right_wave_data = torch.from_numpy(
                 right_wave.data)
@@ -145,6 +158,7 @@ class WaveFormDataset(Dataset):
         self.data[wk] = res
         self.left_data[wk] = left_res
         self.right_data[wk] = right_res
+        self.noise_data[wk] = noise_res
         self.label[wk] = torch.tensor(arrival_times, dtype=torch.int)
 
     def __len__(self) -> int:
@@ -157,6 +171,7 @@ class WaveFormDataset(Dataset):
             "data": self.data[key],
             "left_data": self.left_data[key],
             "right_data": self.right_data[key],
+            "noise_data": self.noise_data[key],
             "arrivals": self.label[key],
             "key": key
         }
@@ -179,6 +194,7 @@ class WaveFormDataset(Dataset):
             "data": self.data,
             "left_data": self.left_data,
             "right_data": self.right_data,
+            "noise_data": self.noise_data,
             "label": self.label
         }
         torch.save(tosave, file_name)
@@ -190,4 +206,5 @@ class WaveFormDataset(Dataset):
         self.data: Dict[str, torch.Tensor] = toload['data']
         self.left_data: Dict[str, torch.Tensor] = toload['left_data']
         self.right_data: Dict[str, torch.Tensor] = toload['right_data']
+        self.noise_data: Dict[str, torch.Tensor] = toload['noise_data']
         self.label: Dict[str, torch.Tensor] = toload['label']

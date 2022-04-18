@@ -25,6 +25,7 @@ class DataConfig:
     win_length: float = 120.
     left_extend: float = 10.
     right_extend: float = 110.
+    avoid_first_ten_seconds: bool = True
     # label
     label_shape: str = "gaussian"
     label_width: int = 120
