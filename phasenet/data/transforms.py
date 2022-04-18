@@ -27,7 +27,9 @@ class RandomShift:
             arrivals_shifted[i] += shift
         # update data
         data_shifted = data.roll(shift, dims=1)
-        if shift >= 0:
+        if shift == 0:
+            pass
+        elif shift > 0:
             data_shifted[:, :shift] = left_data[:, -shift:]
         else:
             # note shift<0 when modifying the code
