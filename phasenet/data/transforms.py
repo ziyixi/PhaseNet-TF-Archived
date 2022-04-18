@@ -16,6 +16,7 @@ class RandomShift:
     def __call__(self, sample: Dict) -> Dict:
         sample_updated = sample.copy()
         data, arrivals = sample_updated["data"], sample_updated["arrivals"]
+        left_data, right_data = sample_updated["left_data"], sample_updated["right_data"]
         # determine the shift range
         left_bound = -torch.max(arrivals)
         right_bound = self.width-torch.min(arrivals)
@@ -27,9 +28,10 @@ class RandomShift:
         # update data
         data_shifted = data.roll(shift, dims=1)
         if shift >= 0:
-            data_shifted[:, :shift] = 0
+            data_shifted[:, :shift] = left_data[:, -shift:]
         else:
-            data_shifted[:, shift:] = 0
+            # note shift<0 when modifying the code
+            data_shifted[:, shift:] = right_data[:, :-shift]
         sample_updated.update({
             "data": data_shifted,
             "arrivals": arrivals_shifted
@@ -108,14 +110,22 @@ class ScaleAmp:
     def __call__(self, sample: Dict) -> Dict:
         sample_updated = sample.copy()
         data: torch.Tensor = sample_updated["data"].clone()
+        left_data: torch.Tensor = sample_updated["left_data"].clone()
+        right_data: torch.Tensor = sample_updated["right_data"].clone()
         if self.global_max:
             raw_max = torch.max(torch.abs(data))
             data = data/raw_max
+            left_data = left_data/raw_max
+            right_data = right_data/raw_max
         else:
             for ich in range(data.shape[0]):
                 raw_max = torch.max(torch.abs(data[ich]))
                 data[ich, :] = data[ich, :]/raw_max
+                left_data[ich, :] = left_data[ich, :]/raw_max
+                right_data[ich, :] = right_data[ich, :]/raw_max
         sample_updated.update({
-            "data": data
+            "data": data,
+            "left_data": left_data,
+            "right_data": right_data
         })
         return sample_updated
