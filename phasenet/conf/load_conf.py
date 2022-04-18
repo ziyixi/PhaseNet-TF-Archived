@@ -29,7 +29,7 @@ class DataConfig:
     label_shape: str = "gaussian"
     label_width: int = 120
     # signal processing
-    taper_percentage: float = 0.05
+    # taper_percentage: float = 0.05
     filter_freqmin: float = 1
     filter_freqmax: float = 10.
     filter_corners: int = 4

@@ -114,8 +114,9 @@ class WaveFormDataset(Dataset):
                 raise Exception(
                     f"{wk} has incorrect time or its length is too small")
             # signal processing
-            trace.detrend()
-            trace.taper(max_percentage=self.data_conf.taper_percentage)
+            # trace.detrend()
+            # trace.taper(max_percentage=self.data_conf.taper_percentage)
+            # taper and detrend will make it difficult to handle signal_left
             trace.filter('bandpass', freqmin=self.data_conf.filter_freqmin, freqmax=self.data_conf.filter_freqmax,
                          corners=self.data_conf.filter_corners, zerophase=self.data_conf.filter_zerophase)
             # cut
@@ -128,10 +129,11 @@ class WaveFormDataset(Dataset):
             wave_data = torch.from_numpy(
                 wave.data)
             res[i, :] = wave_data[:res.shape[1]]
-            # left wave might not be that long
+            # left wave might not be that long, we need to fill the noise to avoid abrupt jump
             left_wave_data = torch.from_numpy(left_wave.data)
-            left_wave_data = left_wave_data[:left_res.shape[1]]
-            left_res[i, -len(left_wave_data):] = left_wave_data[:]
+            repeat_times = left_res.shape[1]//len(left_wave_data)+1
+            left_wave_data = left_wave_data.repeat(repeat_times)
+            left_res[i, :] = left_wave_data[-left_res.shape[1]:]
             # right wave is reliable
             right_wave_data = torch.from_numpy(
                 right_wave.data)
