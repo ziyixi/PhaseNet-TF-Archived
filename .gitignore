@@ -131,6 +131,7 @@ dmypy.json
 # vscode
 .vscode
 dataset/
+dataset-ps/
 
 # note
 CheckList.md
@@ -146,3 +147,4 @@ train_dev.py
 runs/
 .DS_Store
 train_old.py
+Note.md

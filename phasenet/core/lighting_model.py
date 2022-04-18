@@ -82,10 +82,14 @@ class PhaseNetModel(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             self.parameters(), lr=self.train_conf.learning_rate, weight_decay=self.train_conf.weight_decay, amsgrad=False
         )
-        lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-            optimizer,
-            lambda x: (1 - x / self._num_training_steps) ** 0.9,
-        )
+        # lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+        #     optimizer,
+        #     lambda x: (1 - x / self._num_training_steps) ** 0.9,
+        # )
+        # lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        #     optimizer, self.train_conf.learning_rate*10, total_steps=self._num_training_steps)
+        lr_scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer, start_factor=1, end_factor=0.1, total_iters=self._num_training_steps)
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
