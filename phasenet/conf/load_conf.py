@@ -43,9 +43,11 @@ class DataConfig:
     # scale
     scale_max_amp: float = 1.0
     scale_global_max: bool = True
+    # replice with noise
+    noise_replace_ratio: float = 0.05
     # transforms
     train_trans: List[str] = field(default_factory=lambda: [
-                                   "scale", "shift", "label", "stack"])
+                                   "scale", "shift", "label", "stack", "replace_noise"])
     val_trans: List[str] = field(default_factory=lambda: [
         "scale", "shift", "label"])
     test_trans: List[str] = field(default_factory=lambda: [

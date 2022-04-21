@@ -21,12 +21,13 @@ class WaveFormDataset(Dataset):
     Waveform dataset and phase arrival time tag.
     """
 
-    def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, prepare: bool = False) -> None:
+    def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, prepare: bool = False) -> None:
         super().__init__()
         self.data_conf = data_conf
         self.data_type = data_type
         self.transform = transform
         self.stack_transform = stack_transform
+        self.replace_noise_transform = replace_noise_transform
 
         # path related
         asdf_file_path = ""
@@ -185,6 +186,8 @@ class WaveFormDataset(Dataset):
             if torch.rand(1).item() <= self.data_conf.stack_ratio:
                 # stack based on the ratio
                 sample = self.stack_transform(sample, random_sample)
+        if self.replace_noise_transform:
+            sample = self.replace_noise_transform(sample)
         return sample
 
     def save(self, file_name: str) -> None:

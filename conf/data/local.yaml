@@ -15,3 +15,4 @@ train_batch_size: 4
 val_batch_size: 2
 test_batch_size: 2
 train_shuffle: false
+noise_replace_ratio: 0.9

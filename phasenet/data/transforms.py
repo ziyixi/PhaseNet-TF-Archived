@@ -76,6 +76,29 @@ class GenLabel:
         return sample_updated
 
 
+class ReplaceNoise:
+    def __init__(self, data_conf: DataConfig) -> None:
+        self.noise_replace_ratio = data_conf.noise_replace_ratio
+
+    def __call__(self, sample: Dict) -> Dict:
+        sample_updated = sample.copy()
+        if torch.rand(1).item() > self.noise_replace_ratio:
+            return sample_updated
+        else:
+            data: torch.Tensor = sample_updated['data'].clone()
+            label: torch.Tensor = sample_updated['label'].clone()
+            noise_data: torch.Tensor = sample_updated['noise_data']
+            # replace by noise
+            data[:, :] = noise_data[:, :]
+            label[0, :] = 1.
+            label[1:, :] = 0.
+            sample_updated.update({
+                'data': data,
+                'label': label
+            })
+            return sample_updated
+
+
 class StackRand:
     def __init__(self, data_conf: DataConfig) -> None:
         self.min_stack_gap = data_conf.min_stack_gap
@@ -114,20 +137,24 @@ class ScaleAmp:
         data: torch.Tensor = sample_updated["data"].clone()
         left_data: torch.Tensor = sample_updated["left_data"].clone()
         right_data: torch.Tensor = sample_updated["right_data"].clone()
+        noise_data: torch.Tensor = sample_updated["noise_data"].clone()
         if self.global_max:
             raw_max = torch.max(torch.abs(data))
             data = data/raw_max
             left_data = left_data/raw_max
             right_data = right_data/raw_max
+            noise_data = noise_data/raw_max
         else:
             for ich in range(data.shape[0]):
                 raw_max = torch.max(torch.abs(data[ich]))
                 data[ich, :] = data[ich, :]/raw_max
                 left_data[ich, :] = left_data[ich, :]/raw_max
                 right_data[ich, :] = right_data[ich, :]/raw_max
+                noise_data[ich, :] = noise_data[ich, :]/raw_max
         sample_updated.update({
             "data": data,
             "left_data": left_data,
-            "right_data": right_data
+            "right_data": right_data,
+            "noise_data": noise_data
         })
         return sample_updated

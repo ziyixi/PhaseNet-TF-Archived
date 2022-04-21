@@ -20,6 +20,7 @@ train_trans:
   - scale
   - label
   - stack
+  - replace_noise
 
 val_trans:
   - shift
