@@ -60,6 +60,11 @@ class VisualizeInfo:
                         vmax.append(30)
             else:
                 vmax = [self.sgram_threshold]*3
+                # print(torch.max(sgram[2]), "++++")
+                # p_arrival = min(arrivals)
+                # if p_arrival+self.sampling_rate * 5 >= 0 and p_arrival+self.sampling_rate*15 <= sgram.shape[-1]:
+                #     print(torch.max(sgram[2][:, p_arrival+self.sampling_rate *
+                #                              5:p_arrival+self.sampling_rate*15]), "@@@@")
             max_scale = torch.max(torch.abs(data))
             # * plot wave and sgram
             # R component

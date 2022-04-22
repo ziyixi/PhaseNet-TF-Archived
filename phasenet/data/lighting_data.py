@@ -34,29 +34,20 @@ class WaveFormDataModule(pl.LightningDataModule):
                                        for key in self.data_conf.train_trans if key not in ["stack", "replace_noise"]])
             transform_val = Compose([self.trans[key]
                                      for key in self.data_conf.val_trans if key not in ["stack", "replace_noise"]])
-            stack_transform_train = self.trans["stack"] if (
-                "stack" in self.data_conf.train_trans) else None
-            stack_transform_val = self.trans["stack"] if (
-                "stack" in self.data_conf.val_trans) else None
-            replace_noise_transform_train = self.trans["replace_noise"] if (
-                "replace_noise" in self.data_conf.train_trans) else None
-            replace_noise_transform_val = self.trans["replace_noise"] if (
-                "replace_noise" in self.data_conf.val_trans) else None
+            stack_transform_train = self.trans["stack"] if self.data_conf.stack else None
+            replace_noise_transform_train = self.trans["replace_noise"] if self.data_conf.replace_noise else None
+            scale_at_end_transform_train = self.trans["scale"] if self.data_conf.scale_at_end else None
 
             self.wave_train = WaveFormDataset(
-                self.data_conf, data_type="train", transform=transform_train, stack_transform=stack_transform_train, replace_noise_transform=replace_noise_transform_train)
+                self.data_conf, data_type="train", transform=transform_train, stack_transform=stack_transform_train, replace_noise_transform=replace_noise_transform_train, scale_at_end_transform=scale_at_end_transform_train)
             self.wave_val = WaveFormDataset(
-                self.data_conf, data_type="val", transform=transform_val, stack_transform=stack_transform_val, replace_noise_transform=replace_noise_transform_val)
+                self.data_conf, data_type="val", transform=transform_val)
 
         if stage == "test" or stage is None:
             transform = Compose([self.trans[key]
                                 for key in self.data_conf.test_trans if key not in ["stack", "replace_noise"]])
-            stack_transform = self.trans["stack"] if (
-                "stack" in self.data_conf.test_trans) else None
-            replace_noise_transform = self.trans["replace_noise"] if (
-                "replace_noise" in self.data_conf.test_trans) else None
             self.wave_test = WaveFormDataset(
-                self.data_conf, data_type="test", transform=transform, stack_transform=stack_transform, replace_noise_transform=replace_noise_transform)
+                self.data_conf, data_type="test", transform=transform)
 
     def train_dataloader(self):
         return DataLoader(self.wave_train, batch_size=self.data_conf.train_batch_size, shuffle=self.data_conf.train_shuffle, num_workers=self.data_conf.num_workers)

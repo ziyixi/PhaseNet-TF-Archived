@@ -25,7 +25,8 @@ class DataConfig:
     win_length: float = 120.
     left_extend: float = 10.
     right_extend: float = 110.
-    avoid_first_ten_seconds: bool = True
+    avoid_first_ten_seconds: bool = True  # avoid taper effect
+    avoid_last_ten_seconds: bool = True  # avoid taper effect
     # label
     label_shape: str = "gaussian"
     label_width: int = 120
@@ -43,15 +44,18 @@ class DataConfig:
     # scale
     scale_max_amp: float = 1.0
     scale_global_max: bool = True
-    # replice with noise
-    noise_replace_ratio: float = 0.05
+    scale_norm: bool = True  # normalization to std distribution, ignore scale_max_amp
     # transforms
     train_trans: List[str] = field(default_factory=lambda: [
-                                   "scale", "shift", "label", "stack", "replace_noise"])
+        "shift", "scale", "label"])
+    stack: bool = True
+    replace_noise: bool = True
+    noise_replace_ratio: float = 0.05
+    scale_at_end: bool = True
     val_trans: List[str] = field(default_factory=lambda: [
-        "scale", "shift", "label"])
+        "shift", "scale", "label"])
     test_trans: List[str] = field(default_factory=lambda: [
-        "scale", "shift", "label"])
+        "shift", "scale", "label"])
     # batch size
     train_batch_size: int = 32
     val_batch_size: int = 1

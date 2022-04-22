@@ -15,4 +15,26 @@ train_batch_size: 4
 val_batch_size: 2
 test_batch_size: 2
 train_shuffle: false
+scale_global_max: true
+scale_norm: true
+
+stack: true
+stack_ratio: 0.9
+replace_noise: true
 noise_replace_ratio: 0.9
+scale_at_end: true
+
+train_trans:
+  - shift
+  - scale
+  - label
+
+val_trans:
+  - shift
+  - scale
+  - label
+
+test_trans:
+  - shift
+  - scale
+  - label

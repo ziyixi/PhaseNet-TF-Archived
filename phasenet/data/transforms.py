@@ -131,8 +131,15 @@ class ScaleAmp:
     def __init__(self, data_conf: DataConfig) -> None:
         self.max_amp = data_conf.scale_max_amp
         self.global_max = data_conf.scale_global_max
+        self.scale_norm = data_conf.scale_norm
 
     def __call__(self, sample: Dict) -> Dict:
+        if not self.scale_norm:
+            return self.scale_max_call(sample)
+        else:
+            return self.scale_norm_call(sample)
+
+    def scale_max_call(self, sample: Dict) -> Dict:
         sample_updated = sample.copy()
         data: torch.Tensor = sample_updated["data"].clone()
         left_data: torch.Tensor = sample_updated["left_data"].clone()
@@ -156,5 +163,27 @@ class ScaleAmp:
             "left_data": left_data,
             "right_data": right_data,
             "noise_data": noise_data
+        })
+        return sample_updated
+
+    def scale_norm_call(self, sample: Dict) -> Dict:
+        sample_updated = sample.copy()
+        data: torch.Tensor = sample_updated["data"].clone()
+        if self.global_max:
+            # data ch, nt
+            mean_vals = torch.mean(data, axis=1, keepdim=True)
+            data = data-mean_vals
+            max_std_val = torch.max(torch.std(data, axis=1))
+            if max_std_val == 0:
+                max_std_val = torch.ones(1)
+            data = data/max_std_val
+        else:
+            mean_vals = torch.mean(data, axis=1, keepdim=True)
+            data = data-mean_vals
+            std_vals = torch.std(data, axis=1, keepdim=True)
+            std_vals[std_vals == 0] = 1
+            data = data/std_vals
+        sample_updated.update({
+            "data": data
         })
         return sample_updated

@@ -21,13 +21,14 @@ class WaveFormDataset(Dataset):
     Waveform dataset and phase arrival time tag.
     """
 
-    def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, prepare: bool = False) -> None:
+    def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, scale_at_end_transform=None, prepare: bool = False) -> None:
         super().__init__()
         self.data_conf = data_conf
         self.data_type = data_type
         self.transform = transform
         self.stack_transform = stack_transform
         self.replace_noise_transform = replace_noise_transform
+        self.scale_at_end_transform = scale_at_end_transform
 
         # path related
         asdf_file_path = ""
@@ -84,6 +85,8 @@ class WaveFormDataset(Dataset):
             end += -start
             start = 0
         left_signal_start = start-self.data_conf.win_length
+        if self.data_conf.avoid_first_ten_seconds:
+            left_signal_start -= 10
         left_signal_end = start
         right_signal_start = end
         right_signal_end = end+self.data_conf.win_length
@@ -113,7 +116,7 @@ class WaveFormDataset(Dataset):
         components = ["R", "T", "Z"]
         for i in range(3):
             trace = stream.select(component=components[i])[0]
-            if start < trace.stats.starttime or end > trace.stats.endtime or trace.stats.endtime-self.data_conf.win_length < end:
+            if start < trace.stats.starttime or end > trace.stats.endtime or trace.stats.endtime-self.data_conf.win_length-10 < end:
                 # both signal and noise should be able to cut
                 raise Exception(
                     f"{wk} has incorrect time or its length is too small")
@@ -129,8 +132,12 @@ class WaveFormDataset(Dataset):
                 starttime=left_signal_start, endtime=left_signal_end)
             right_wave = trace.slice(
                 starttime=right_signal_start, endtime=right_signal_end)
-            noise_wave = trace.slice(
-                starttime=trace.stats.endtime-self.data_conf.win_length, endtime=trace.stats.endtime)
+            if self.data_conf.avoid_last_ten_seconds:
+                noise_wave = trace.slice(
+                    starttime=trace.stats.endtime-self.data_conf.win_length-10, endtime=trace.stats.endtime-10)
+            else:
+                noise_wave = trace.slice(
+                    starttime=trace.stats.endtime-self.data_conf.win_length, endtime=trace.stats.endtime)
             # to torch
             wave_data = torch.from_numpy(
                 wave.data)
@@ -143,6 +150,7 @@ class WaveFormDataset(Dataset):
             if self.data_conf.avoid_first_ten_seconds:
                 left_wave_data = left_wave_data[int(10*sampling_rate):]
             if len(left_wave_data) > 0:
+                left_wave_data = left_wave_data[:left_res.shape[1]]
                 left_res[i, -len(left_wave_data):] = left_wave_data[:]
                 left_res[i, :-len(left_wave_data)
                          ] = noise_res[i, :-len(left_wave_data)]
@@ -188,6 +196,8 @@ class WaveFormDataset(Dataset):
                 sample = self.stack_transform(sample, random_sample)
         if self.replace_noise_transform:
             sample = self.replace_noise_transform(sample)
+        if self.scale_at_end_transform:
+            sample = self.scale_at_end_transform(sample)
         return sample
 
     def save(self, file_name: str) -> None:

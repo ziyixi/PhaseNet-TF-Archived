@@ -6,3 +6,4 @@ log_train: true
 log_val: true
 log_test: true
 log_epoch: 2
+sgram_threshold: 500
