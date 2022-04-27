@@ -10,15 +10,9 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "~3.9"
-torch = [
-    {url="https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp39-cp39-linux_x86_64.whl",markers = "sys_platform == 'linux'"},
-    {version="^1.11.0",markers = "sys_platform == 'darwin'"}]
-torchvision = [
-    {url="https://download.pytorch.org/whl/cu113/torchvision-0.12.0%2Bcu113-cp39-cp39-linux_x86_64.whl",markers = "sys_platform == 'linux'"},
-    {version="^0.12.0",markers = "sys_platform == 'darwin'"}]
-torchaudio = [
-    {url="https://download.pytorch.org/whl/cu113/torchaudio-0.11.0%2Bcu113-cp39-cp39-linux_x86_64.whl",markers = "sys_platform == 'linux'"},
-    {version="^0.11.0",markers = "sys_platform == 'darwin'"}]
+torch = {url="https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp39-cp39-linux_x86_64.whl"}
+torchvision = {url="https://download.pytorch.org/whl/cu113/torchvision-0.12.0%2Bcu113-cp39-cp39-linux_x86_64.whl"}
+torchaudio = {url="https://download.pytorch.org/whl/cu113/torchaudio-0.11.0%2Bcu113-cp39-cp39-linux_x86_64.whl"}
 hydra-core = "^1.1.2"
 omegaconf = "^2.1.1"
 pyasdf = "^0.7.5"
