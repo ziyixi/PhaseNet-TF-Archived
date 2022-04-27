@@ -92,6 +92,7 @@ class ModelConfig:
     out_channels: int = 4
     init_features: int = 32
     n_freq: int = 64
+    more_layer: bool = False
 
     encoder_conv_kernel_size: List[int] = field(default_factory=lambda: [3, 3])
     encoder_pool_kernel_size: List[int] = field(default_factory=lambda: [2, 2])

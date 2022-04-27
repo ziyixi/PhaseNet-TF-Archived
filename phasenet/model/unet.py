@@ -18,6 +18,7 @@ class UNet(nn.Module):
         self._out_features = ["out"]
         self._out_feature_channels = {"out": cfg_model.out_channels}
         self._out_feature_strides = {"out": 1}
+        self.more_layer = cfg_model.more_layer
 
         # * enc1
         features = cfg_model.init_features
@@ -58,12 +59,40 @@ class UNet(nn.Module):
         self.fc4 = nn.Sequential(
             nn.Linear(cfg_model.n_freq // 8, 1), nn.ReLU(inplace=True))
 
-        # * bottleneck
-        self.bottleneck = UNet._block(
-            features * 8, features * 16, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="bottleneck"
-        )
-        self.fc_bottleneck = nn.Sequential(
-            nn.Linear(cfg_model.n_freq // 16, 1), nn.ReLU())
+        # * possible enc5
+        if cfg_model.more_layer:
+            self.encoder5 = UNet._block(
+                features * 8, features * 16, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="enc5"
+            )
+            self.pool5 = nn.MaxPool2d(
+                kernel_size=tuple(cfg_model.encoder_pool_kernel_size), stride=tuple(cfg_model.encoder_pool_stride))
+            self.fc5 = nn.Sequential(
+                nn.Linear(cfg_model.n_freq // 16, 1), nn.ReLU(inplace=True))
+
+        # * bottleneck (possible enc5 incluence)
+        if cfg_model.more_layer:
+            self.bottleneck = UNet._block(
+                features * 16, features * 32, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="bottleneck"
+            )
+            self.fc_bottleneck = nn.Sequential(
+                nn.Linear(cfg_model.n_freq // 32, 1), nn.ReLU())
+        else:
+            self.bottleneck = UNet._block(
+                features * 8, features * 16, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="bottleneck"
+            )
+            self.fc_bottleneck = nn.Sequential(
+                nn.Linear(cfg_model.n_freq // 16, 1), nn.ReLU())
+
+        # * possible dec5
+        if cfg_model.more_layer:
+            self.upconv5 = nn.Sequential(
+                nn.ConvTranspose2d(features * 32, features * 16,
+                                   kernel_size=tuple(cfg_model.decoder_pool_kernel_size), stride=tuple(cfg_model.decoder_pool_stride)),
+                nn.ReLU(inplace=True),
+            )
+            self.decoder5 = UNet._block(
+                (features * 16) * 2, features * 16, kernel_size=tuple(cfg_model.decoder_conv_kernel_size), name="dec5"
+            )
 
         # * dec4
         self.upconv4 = nn.Sequential(
@@ -127,10 +156,26 @@ class UNet(nn.Module):
         enc4 = self.encoder4(self.pool3(enc3))
         enc4_fc = self.fc4(enc4)
 
-        bottleneck = self.bottleneck(self.pool4(enc4))
-        bottleneck_fc = self.fc_bottleneck(bottleneck)
+        if self.more_layer:
+            enc5 = self.encoder5(self.pool4(enc4))
+            enc5_fc = self.fc5(enc5)
 
-        dec4_uc = self.upconv4(bottleneck_fc)
+        if self.more_layer:
+            bottleneck = self.bottleneck(self.pool5(enc5))
+            bottleneck_fc = self.fc_bottleneck(bottleneck)
+        else:
+            bottleneck = self.bottleneck(self.pool4(enc4))
+            bottleneck_fc = self.fc_bottleneck(bottleneck)
+
+        if self.more_layer:
+            dec5_uc = self.upconv5(bottleneck_fc)
+            dec5_ct = UNet._cat(dec5_uc, enc5_fc)
+            dec5 = self.decoder5(dec5_ct)
+
+        if self.more_layer:
+            dec4_uc = self.upconv4(dec5)
+        else:
+            dec4_uc = self.upconv4(bottleneck_fc)
         dec4_ct = UNet._cat(dec4_uc, enc4_fc)
         dec4 = self.decoder4(dec4_ct)
 
