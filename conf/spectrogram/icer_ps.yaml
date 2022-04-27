@@ -1,4 +1,4 @@
 defaults:
   - base_spectrogram
 
-max_clamp: 500
+max_clamp: 300

@@ -115,6 +115,7 @@ class TrainConfig:
     accelerator: str = "cpu"
     strategy: Optional[str] = None
     use_amp: bool = True
+    use_a100: bool = False
     distributed_devices: List[int] = field(
         default_factory=lambda: [0, 1, 2, 3])
     limit_train_batches: Optional[int] = None

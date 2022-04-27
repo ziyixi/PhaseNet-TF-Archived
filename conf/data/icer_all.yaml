@@ -1,0 +1,40 @@
+defaults:
+  - base_data
+
+data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-all
+train: tongaml_train.h5
+test: tongaml_test.h5
+val: tongaml_val.h5
+
+phases:
+  - TP
+  - TS
+  - TPS
+
+train_batch_size: 32
+val_batch_size: 1
+test_batch_size: 1
+train_shuffle: true
+scale_global_max: true
+scale_norm: true
+
+stack: true
+stack_ratio: 0.6
+replace_noise: true
+noise_replace_ratio: 0.05
+scale_at_end: true
+
+train_trans:
+  - shift
+  - scale
+  - label
+
+val_trans:
+  - shift
+  - scale
+  - label
+
+test_trans:
+  - shift
+  - scale
+  - label

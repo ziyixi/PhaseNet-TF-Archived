@@ -1,0 +1,11 @@
+defaults:
+  - base_model
+
+out_channels: 4
+encoder_conv_kernel_size:
+  - 3
+  - 3
+decoder_conv_kernel_size:
+  - 3
+  - 3
+n_freq: 64

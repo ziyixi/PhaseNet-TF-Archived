@@ -31,13 +31,19 @@ def train_app(cfg: Config) -> None:
     # * callbacks
     lr_monitor = LearningRateMonitor(logging_interval='epoch')  # monitor lr
     # * prepare trainner
+    precision = 32
+    if train_conf.use_amp:
+        if train_conf.use_a100:
+            precision = "bf16"
+        else:
+            precision = 16
     trainer = Trainer(
         callbacks=[lr_monitor],
         accelerator=train_conf.accelerator,
         deterministic=train_conf.use_random_seed,
         devices=(
             train_conf.distributed_devices if train_conf.accelerator == "gpu" else None),
-        precision=(16 if train_conf.use_amp else 32),
+        precision=precision,
         max_epochs=train_conf.epochs,
         strategy=(train_conf.strategy if train_conf.accelerator ==
                   "gpu" else None),

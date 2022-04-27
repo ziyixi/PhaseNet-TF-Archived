@@ -4,8 +4,10 @@ defaults:
 epochs: 100
 accelerator: gpu
 use_amp: true
-strategy: ddp
+use_a100: true
+strategy: ddp_find_unused_parameters_false
 distributed_devices:
   - 0
+  - 1
   - 2
-  - 3
+  # - 3

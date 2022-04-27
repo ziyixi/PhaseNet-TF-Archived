@@ -1,0 +1,8 @@
+defaults:
+  - base_spectrogram
+
+max_clamp: 3000
+freqmin: 0
+freqmax: 10
+n_fft: 256
+height: 64

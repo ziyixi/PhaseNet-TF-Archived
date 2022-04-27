@@ -148,3 +148,6 @@ runs/
 .DS_Store
 train_old.py
 Note.md
+slurm/
+saved_output/
+dataset-all/
