@@ -23,7 +23,7 @@ class UNet(nn.Module):
         # * enc1
         features = cfg_model.init_features
         in_channels = cfg_model.in_channels
-        self.encoder1 = UNet._block(
+        self.encoder1 = UNet._block_firstlayer(
             in_channels, features, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="enc1"
         )
         self.pool1 = nn.MaxPool2d(
@@ -244,4 +244,60 @@ class UNet(nn.Module):
             ),
             (name + "_norm2", nn.BatchNorm2d(num_features=features)),
             (name + "_relu2", nn.ReLU(inplace=True)),
+        ]))
+
+    @staticmethod
+    def _block_firstlayer(in_channels, features, kernel_size=(3, 3), name=""):
+        return nn.Sequential(OrderedDict([
+            (
+                name + "_conv1",
+                nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=features,
+                    kernel_size=kernel_size,
+                    padding='same',
+                    bias=False,
+                ),
+            ),
+            (name + "_norm1", nn.BatchNorm2d(num_features=features)),
+            (name + "_relu1", nn.ReLU(inplace=True)),
+
+            (
+                name + "_conv2",
+                nn.Conv2d(
+                    in_channels=features,
+                    out_channels=features,
+                    kernel_size=kernel_size,
+                    padding='same',
+                    bias=False,
+                ),
+            ),
+            (name + "_norm2", nn.BatchNorm2d(num_features=features)),
+            (name + "_relu2", nn.ReLU(inplace=True)),
+
+            (
+                name + "_conv3",
+                nn.Conv2d(
+                    in_channels=features,
+                    out_channels=features,
+                    kernel_size=kernel_size,
+                    padding='same',
+                    bias=False,
+                ),
+            ),
+            (name + "_norm3", nn.BatchNorm2d(num_features=features)),
+            (name + "_relu3", nn.ReLU(inplace=True)),
+
+            (
+                name + "_conv4",
+                nn.Conv2d(
+                    in_channels=features,
+                    out_channels=features,
+                    kernel_size=kernel_size,
+                    padding='same',
+                    bias=False,
+                ),
+            ),
+            (name + "_norm4", nn.BatchNorm2d(num_features=features)),
+            (name + "_relu4", nn.ReLU(inplace=True)),
         ]))
