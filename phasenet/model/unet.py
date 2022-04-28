@@ -23,9 +23,14 @@ class UNet(nn.Module):
         # * enc1
         features = cfg_model.init_features
         in_channels = cfg_model.in_channels
-        self.encoder1 = UNet._block_firstlayer(
-            in_channels, features, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="enc1"
-        )
+        if cfg_model.first_layer_more_cnn:
+            self.encoder1 = UNet._block_firstlayer(
+                in_channels, features, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="enc1"
+            )
+        else:
+            self.encoder1 = UNet._block(
+                in_channels, features, kernel_size=tuple(cfg_model.encoder_conv_kernel_size),  name="enc1"
+            )
         self.pool1 = nn.MaxPool2d(
             kernel_size=tuple(cfg_model.encoder_pool_kernel_size), stride=tuple(cfg_model.encoder_pool_stride)
         )
