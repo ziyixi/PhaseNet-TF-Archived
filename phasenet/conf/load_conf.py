@@ -103,6 +103,9 @@ class ModelConfig:
     decoder_pool_kernel_size: List[int] = field(default_factory=lambda: [2, 2])
     decoder_pool_stride: List[int] = field(default_factory=lambda: [2, 2])
 
+    use_dropout: bool = False  # random generator consistent
+    dropout_ratio: float = 0.5
+
 
 @dataclass
 class TrainConfig:

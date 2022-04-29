@@ -20,6 +20,15 @@ class UNet(nn.Module):
         self._out_feature_strides = {"out": 1}
         self.more_layer = cfg_model.more_layer
 
+        # * dropout
+        # from https://discuss.pytorch.org/t/using-same-dropout-object-for-multiple-drop-out-layers/39027 and
+        # https://www.kaggle.com/code/phoenigs/u-net-dropout-augmentation-stratification/notebook
+        # we can safely use the same dropout layer
+        if cfg_model.use_dropout:
+            self.dropout = nn.Dropout(p=cfg_model.dropout_ratio)
+        else:
+            self.dropout = nn.Identity()
+
         # * enc1
         features = cfg_model.init_features
         in_channels = cfg_model.in_channels
@@ -151,19 +160,24 @@ class UNet(nn.Module):
 
         enc1 = self.encoder1(x)
         enc1_fc = self.fc1(enc1)
+        enc1 = self.dropout(enc1)
 
         enc2 = self.encoder2(self.pool1(enc1))
         enc2_fc = self.fc2(enc2)
+        enc2 = self.dropout(enc2)
 
         enc3 = self.encoder3(self.pool2(enc2))
         enc3_fc = self.fc3(enc3)
+        enc3 = self.dropout(enc3)
 
         enc4 = self.encoder4(self.pool3(enc3))
         enc4_fc = self.fc4(enc4)
+        enc4 = self.dropout(enc4)
 
         if self.more_layer:
             enc5 = self.encoder5(self.pool4(enc4))
             enc5_fc = self.fc5(enc5)
+            enc5 = self.dropout(enc5)
 
         if self.more_layer:
             bottleneck = self.bottleneck(self.pool5(enc5))
@@ -175,6 +189,7 @@ class UNet(nn.Module):
         if self.more_layer:
             dec5_uc = self.upconv5(bottleneck_fc)
             dec5_ct = UNet._cat(dec5_uc, enc5_fc)
+            dec5_ct = self.dropout(dec5_ct)
             dec5 = self.decoder5(dec5_ct)
 
         if self.more_layer:
@@ -182,18 +197,22 @@ class UNet(nn.Module):
         else:
             dec4_uc = self.upconv4(bottleneck_fc)
         dec4_ct = UNet._cat(dec4_uc, enc4_fc)
+        dec4_ct = self.dropout(dec4_ct)
         dec4 = self.decoder4(dec4_ct)
 
         dec3_uc = self.upconv3(dec4)
         dec3_ct = UNet._cat(dec3_uc, enc3_fc)
+        dec3_ct = self.dropout(dec3_ct)
         dec3 = self.decoder3(dec3_ct)
 
         dec2_uc = self.upconv2(dec3)
         dec2_ct = UNet._cat(dec2_uc, enc2_fc)
+        dec2_ct = self.dropout(dec2_ct)
         dec2 = self.decoder2(dec2_ct)
 
         dec1_uc = self.upconv1(dec2)
         dec1_ct = UNet._cat(dec1_uc, enc1_fc)
+        dec1_ct = self.dropout(dec1_ct)
         dec1 = self.decoder1(dec1_ct)
 
         out = self.conv(dec1)
