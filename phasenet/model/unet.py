@@ -189,7 +189,7 @@ class UNet(nn.Module):
         if self.more_layer:
             dec5_uc = self.upconv5(bottleneck_fc)
             dec5_ct = UNet._cat(dec5_uc, enc5_fc)
-            dec5_ct = self.dropout(dec5_ct)
+            # dec5_ct = self.dropout(dec5_ct)
             dec5 = self.decoder5(dec5_ct)
 
         if self.more_layer:
@@ -197,22 +197,22 @@ class UNet(nn.Module):
         else:
             dec4_uc = self.upconv4(bottleneck_fc)
         dec4_ct = UNet._cat(dec4_uc, enc4_fc)
-        dec4_ct = self.dropout(dec4_ct)
+        # dec4_ct = self.dropout(dec4_ct)
         dec4 = self.decoder4(dec4_ct)
 
         dec3_uc = self.upconv3(dec4)
         dec3_ct = UNet._cat(dec3_uc, enc3_fc)
-        dec3_ct = self.dropout(dec3_ct)
+        # dec3_ct = self.dropout(dec3_ct)
         dec3 = self.decoder3(dec3_ct)
 
         dec2_uc = self.upconv2(dec3)
         dec2_ct = UNet._cat(dec2_uc, enc2_fc)
-        dec2_ct = self.dropout(dec2_ct)
+        # dec2_ct = self.dropout(dec2_ct)
         dec2 = self.decoder2(dec2_ct)
 
         dec1_uc = self.upconv1(dec2)
         dec1_ct = UNet._cat(dec1_uc, enc1_fc)
-        dec1_ct = self.dropout(dec1_ct)
+        # dec1_ct = self.dropout(dec1_ct)
         dec1 = self.decoder1(dec1_ct)
 
         out = self.conv(dec1)
