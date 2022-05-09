@@ -15,53 +15,52 @@ class DataConfig:
     """
     the dataset path configuration 
     """
-    # data path
+    # * data path
     data_dir: str = MISSING
     train: str = MISSING
     test: str = MISSING
     val: str = MISSING
-    phases: List[str] = MISSING
-    # cut win in dataset
+    phases: List[str] = field(default_factory=lambda: ["TP", "TS", "TPS"])
+    # * cut win in dataset
     win_length: float = 120.
     left_extend: float = 10.
     right_extend: float = 110.
     avoid_first_ten_seconds: bool = True  # avoid taper effect
     avoid_last_ten_seconds: bool = True  # avoid taper effect
-    # label
+    width: int = 4800
+    # * label
     label_shape: str = "gaussian"
     label_width: int = 120
-    # signal processing
-    # taper_percentage: float = 0.05
+    # * signal processing
     filter_freqmin: float = 1
     filter_freqmax: float = 10.
     filter_corners: int = 4
     filter_zerophase: bool = False
-    # win length
-    width: int = 4800
-    # stack
-    stack_ratio: float = 0.6
-    min_stack_gap: int = 100
-    # scale
-    scale_max_amp: float = 1.0
-    scale_global_max: bool = True
-    scale_norm: bool = True  # normalization to std distribution, ignore scale_max_amp
-    # transforms
+    # * transforms, data agument
     train_trans: List[str] = field(default_factory=lambda: [
         "shift", "scale", "label"])
-    stack: bool = True
-    replace_noise: bool = True
-    noise_replace_ratio: float = 0.05
-    scale_at_end: bool = True
     val_trans: List[str] = field(default_factory=lambda: [
         "shift", "scale", "label"])
     test_trans: List[str] = field(default_factory=lambda: [
         "shift", "scale", "label"])
-    # batch size
+
+    stack: bool = True
+    stack_ratio: float = 0.6
+    min_stack_gap: int = 100
+
+    replace_noise: bool = True
+    noise_replace_ratio: float = 0.05
+
+    scale_at_end: bool = True
+    scale_max_amp: float = 1.0
+    scale_global_max: bool = True
+    scale_norm: bool = True  # normalization to std distribution, ignore scale_max_amp
+    # * batch size and shuffle
     train_batch_size: int = 32
     val_batch_size: int = 1
     test_batch_size: int = 1
     train_shuffle: bool = True
-    # workers
+    # * workers
     num_workers: int = 2
 
 
@@ -70,16 +69,16 @@ class SpectrogramConfig:
     """
     Set confiuration to generate the spectrogram from the waveform dataset
     """
-    n_fft: int = 128
+    n_fft: int = 256
     hop_length: int = 1
     power: int = 2
     window_fn: str = "hann"
-    freqmin: float = 1
+    freqmin: float = 0.
     freqmax: float = 10.
     sampling_rate: int = 40
     height: int = 64
     width: int = 4800  # should equal to win_len*sampling_rate
-    max_clamp: int = 50
+    max_clamp: int = 3000
 
 
 @dataclass
@@ -91,51 +90,39 @@ class ModelConfig:
     in_channels: int = 3
     out_channels: int = 4
     init_features: int = 32
-    n_freq: int = 64
-    more_layer: bool = False
-    first_layer_more_cnn: bool = False
+    n_freq: int = 64  # should be the same as height in SpectrogramConfig
+    first_layer_repeating_cnn: int = 3
 
-    encoder_conv_kernel_size: List[int] = field(default_factory=lambda: [3, 3])
-    encoder_pool_kernel_size: List[int] = field(default_factory=lambda: [2, 2])
-    encoder_pool_stride: List[int] = field(default_factory=lambda: [2, 2])
-
-    decoder_conv_kernel_size: List[int] = field(default_factory=lambda: [3, 3])
-    decoder_pool_kernel_size: List[int] = field(default_factory=lambda: [2, 2])
-    decoder_pool_stride: List[int] = field(default_factory=lambda: [2, 2])
+    encoder_conv_kernel_size: List[int] = field(default_factory=lambda: [5, 5])
+    decoder_conv_kernel_size: List[int] = field(default_factory=lambda: [5, 5])
 
 
 @dataclass
 class TrainConfig:
     """
-    teh trainning configuration
+    the trainning configuration
     """
+    # * random seed
     use_random_seed: bool = True
     random_seed: int = 666
+    # * basic configs
     learning_rate: float = 0.01
     weight_decay: float = 1e-4
-    epochs: int = 20
+    epochs: int = 100
+    sync_batchnorm: bool = True
+    # * acceleration
     accelerator: str = "cpu"
     strategy: Optional[str] = None
-    use_amp: bool = True
+    use_amp: bool = False
     use_a100: bool = False
     distributed_devices: List[int] = field(
         default_factory=lambda: [0, 1, 2, 3])
+    # * test on local
     limit_train_batches: Optional[int] = None
     limit_val_batches: Optional[int] = None
     limit_test_batches: Optional[int] = None
+    # * logging
     log_every_n_steps: int = 20
-    sync_batchnorm: bool = True
-
-
-@dataclass
-class ProfileConfig:
-    """
-    the profiling configuration
-    """
-    wait: int = 1
-    warmup: int = 1
-    active: int = 3
-    repeat: int = 2
 
 
 @dataclass
@@ -163,7 +150,6 @@ class Config:
     spectrogram: SpectrogramConfig = MISSING
     model: ModelConfig = MISSING
     train: TrainConfig = MISSING
-    profile: ProfileConfig = MISSING
     visualize: VisualizeConfig = MISSING
 
 
@@ -173,5 +159,4 @@ cs.store(group="data", name="base_data", node=DataConfig)
 cs.store(group="spectrogram", name="base_spectrogram", node=SpectrogramConfig)
 cs.store(group="model", name="base_model", node=ModelConfig)
 cs.store(group="train", name="base_train", node=TrainConfig)
-cs.store(group="profile", name="base_profile", node=ProfileConfig)
 cs.store(group="visualize", name="base_visualize", node=VisualizeConfig)

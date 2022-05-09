@@ -8,20 +8,33 @@ from phasenet.core.sgram import GenSgram
 from phasenet.utils.visualize import VisualizeInfo
 from pytorch_lightning.utilities import rank_zero_only
 from torch.utils.tensorboard import SummaryWriter
+from phasenet.model.unet import UNet
 
 
 class PhaseNetModel(pl.LightningModule):
     def __init__(self, model: nn.Module, conf: Config) -> None:
         super().__init__()
+        # * load confs
         self.spec_conf = conf.spectrogram
         self.model_conf = conf.model
         self.train_conf = conf.train
-        self.visualize = conf.visualize
+        self.visualize_conf = conf.visualize
 
-        # define the model
+        # * define the model
         self.sgram_trans = GenSgram(self.spec_conf)
-        self.model = model(self.model_conf)
-        # log figures
+        # self.model = model(self.model_conf)
+        self.model = None
+        if model == UNet:
+            self.model = UNet(
+                features=self.model_conf.init_features,
+                in_cha=self.model_conf.in_channels,
+                out_cha=self.model_conf.out_channels,
+                first_layer_repeating_cnn=self.model_conf.first_layer_repeating_cnn,
+                n_freq=self.model_conf.n_freq,
+                ksize_down=self.model_conf.encoder_conv_kernel_size,
+                ksize_up=self.model_conf.decoder_conv_kernel_size
+            )
+        # * figure logger
         self.show_figs = VisualizeInfo(
             phases=conf.data.phases,
             sampling_rate=conf.spectrogram.sampling_rate,
@@ -35,8 +48,6 @@ class PhaseNetModel(pl.LightningModule):
         self.figs_test_store = []
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
-        # training_step defined the train loop.
-        # It is independent of forward
         wave, label = batch["data"], batch["label"]
         sgram = self.sgram_trans(wave)
         output = self.model(sgram)
@@ -82,12 +93,6 @@ class PhaseNetModel(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             self.parameters(), lr=self.train_conf.learning_rate, weight_decay=self.train_conf.weight_decay, amsgrad=False
         )
-        # lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        #     optimizer,
-        #     lambda x: (1 - x / self._num_training_steps) ** 0.9,
-        # )
-        # lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        #     optimizer, self.train_conf.learning_rate*10, total_steps=self._num_training_steps)
         lr_scheduler = torch.optim.lr_scheduler.LinearLR(
             optimizer, start_factor=1, end_factor=0.1, total_iters=self._num_training_steps)
         return {
@@ -98,6 +103,7 @@ class PhaseNetModel(pl.LightningModule):
             }
         }
 
+    # * ============== helpers ============== * #
     @property
     def _num_training_steps(self) -> int:
         """Total training steps inferred from datamodule and devices."""
@@ -114,19 +120,20 @@ class PhaseNetModel(pl.LightningModule):
         effective_accum = self.trainer.accumulate_grad_batches * self.trainer.num_devices
         return (batches // effective_accum) * self.trainer.max_epochs
 
+    # * ============== figure plotting ============== * #
     @rank_zero_only
     def _log_figs_train(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor) -> None:
-        if not self.visualize.log_train:
+        if not self.visualize_conf.log_train:
             return
-        if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0):
+        if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize_conf.log_epoch and (self.current_epoch+1) % self.visualize_conf.log_epoch == 0):
             batch_size = len(sgram)
             finished_examples = batch_size*batch_idx
-            if finished_examples < self.visualize.example_num:
-                if finished_examples+batch_size < self.visualize.example_num:
+            if finished_examples < self.visualize_conf.example_num:
+                if finished_examples+batch_size < self.visualize_conf.example_num:
                     example_this_batch = batch_size
                     last_step = False
                 else:
-                    example_this_batch = self.visualize.example_num-finished_examples
+                    example_this_batch = self.visualize_conf.example_num-finished_examples
                     last_step = True
 
                 predict_freq = torch.nn.functional.softmax(predict, dim=1)
@@ -137,7 +144,7 @@ class PhaseNetModel(pl.LightningModule):
                     tensorboard: SummaryWriter = self.logger.experiment
                     if self.current_epoch == self.trainer.max_epochs-1:
                         tag = "train/final"
-                    elif self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0:
+                    elif self.visualize_conf.log_epoch and (self.current_epoch+1) % self.visualize_conf.log_epoch == 0:
                         tag = f"train/epoch{self.current_epoch+1}"
                     tensorboard.add_figure(
                         tag, self.figs_train_store, global_step=self.current_epoch+1)
@@ -145,17 +152,17 @@ class PhaseNetModel(pl.LightningModule):
 
     @rank_zero_only
     def _log_figs_val(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor) -> None:
-        if not self.visualize.log_val:
+        if not self.visualize_conf.log_val:
             return
-        if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0):
+        if (self.current_epoch == self.trainer.max_epochs-1) or (self.visualize_conf.log_epoch and (self.current_epoch+1) % self.visualize_conf.log_epoch == 0):
             batch_size = len(sgram)
             finished_examples = batch_size*batch_idx
-            if finished_examples < self.visualize.example_num:
-                if finished_examples+batch_size < self.visualize.example_num:
+            if finished_examples < self.visualize_conf.example_num:
+                if finished_examples+batch_size < self.visualize_conf.example_num:
                     example_this_batch = batch_size
                     last_step = False
                 else:
-                    example_this_batch = self.visualize.example_num-finished_examples
+                    example_this_batch = self.visualize_conf.example_num-finished_examples
                     last_step = True
 
                 predict_freq = torch.nn.functional.softmax(predict, dim=1)
@@ -166,7 +173,7 @@ class PhaseNetModel(pl.LightningModule):
                     tensorboard: SummaryWriter = self.logger.experiment
                     if self.current_epoch == self.trainer.max_epochs-1:
                         tag = "validation/final"
-                    elif self.visualize.log_epoch and (self.current_epoch+1) % self.visualize.log_epoch == 0:
+                    elif self.visualize_conf.log_epoch and (self.current_epoch+1) % self.visualize_conf.log_epoch == 0:
                         tag = f"validation/epoch{self.current_epoch+1}"
                     tensorboard.add_figure(
                         tag, self.figs_val_store, global_step=self.current_epoch+1)
@@ -174,16 +181,16 @@ class PhaseNetModel(pl.LightningModule):
 
     @rank_zero_only
     def _log_figs_test(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor) -> None:
-        if not self.visualize.log_test:
+        if not self.visualize_conf.log_test:
             return
         batch_size = len(sgram)
         finished_examples = batch_size*batch_idx
-        if finished_examples < self.visualize.example_num:
-            if finished_examples+batch_size < self.visualize.example_num:
+        if finished_examples < self.visualize_conf.example_num:
+            if finished_examples+batch_size < self.visualize_conf.example_num:
                 example_this_batch = batch_size
                 last_step = False
             else:
-                example_this_batch = self.visualize.example_num-finished_examples
+                example_this_batch = self.visualize_conf.example_num-finished_examples
                 last_step = True
 
             predict_freq = torch.nn.functional.softmax(predict, dim=1)

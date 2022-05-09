@@ -24,12 +24,18 @@ def train_app(cfg: Config) -> None:
     # * seed
     if train_conf.use_random_seed:
         seed_everything(train_conf.random_seed)
+
     # * prepare light data and model
-    light_model = PhaseNetModel(UNet, cfg)
+    if cfg.model.nn_model == "unet":
+        light_model = PhaseNetModel(UNet, cfg)
+    else:
+        raise Exception(f"model {cfg.model.nn_model} is not supported.")
     light_data = WaveFormDataModule(cfg.data)
     light_data.prepare_data()
+
     # * callbacks
     lr_monitor = LearningRateMonitor(logging_interval='epoch')  # monitor lr
+
     # * prepare trainner
     precision = 32
     if train_conf.use_amp:
@@ -37,6 +43,7 @@ def train_app(cfg: Config) -> None:
             precision = "bf16"
         else:
             precision = 16
+
     trainer = Trainer(
         callbacks=[lr_monitor],
         accelerator=train_conf.accelerator,
@@ -57,10 +64,12 @@ def train_app(cfg: Config) -> None:
         sync_batchnorm=train_conf.sync_batchnorm,
         num_sanity_val_steps=0,  # no need to do this check outside development
     )
+
     # * train and val
     light_data.setup(stage="fit")
     trainer.fit(light_model, light_data)
     # * test
+
     light_data.setup(stage="test")
     trainer.test(datamodule=light_data, ckpt_path='best')
 

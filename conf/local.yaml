@@ -5,8 +5,7 @@ defaults:
   - base_config
   - data: local
   - spectrogram: local
-  - model: sample
+  - model: local
   - train: local
-  - profile: sample
   - visualize: local
   - _self_
