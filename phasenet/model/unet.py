@@ -7,7 +7,6 @@ from typing import Tuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 # * ============== define blocks ============== * #
@@ -79,27 +78,15 @@ class Up(nn.Module):
         """(ConvTranspose2d => ReLU + skip) => RepeatingConv"""
         super().__init__()
         self.upconv = nn.Sequential(
-            nn.ConvTranspose2d(i, f, kernel_size=(2, 2), stride=(2, 2)),
+            nn.ConvTranspose2d(i, f, kernel_size=(2, 1), stride=(2, 1)),
             nn.ReLU(inplace=True),
         )
         self.decoder = RepeatingConv(2*f, f, r, ksize)
 
     def forward(self, x: torch.tensor, skip: torch.tensor) -> torch.Tensor:
         x = self.upconv(x)
-        x = self._cat(x, skip)
+        x = torch.cat((x, skip), dim=1)
         return self.decoder(x)
-
-    @staticmethod
-    def _cat(x1, x2):
-        # assume the size of x1 is smaller than x2
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
-        # padding is from the last dimension
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX //
-                        2, diffY // 2, diffY - diffY // 2])
-
-        x1 = torch.cat((x1, x2), dim=1)
-        return x1
 
 
 # * ============== define U-Net model ============== * #
