@@ -107,7 +107,7 @@ class TrainConfig:
     random_seed: int = 666
     # * basic configs
     learning_rate: float = 0.01
-    weight_decay: float = 1e-4
+    weight_decay: float = 1e-3
     epochs: int = 100
     sync_batchnorm: bool = True
     # * acceleration
