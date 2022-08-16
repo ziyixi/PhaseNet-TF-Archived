@@ -107,7 +107,7 @@ class TrainConfig:
     random_seed: int = 666
     # * basic configs
     learning_rate: float = 0.01
-    weight_decay: float = 1e-4
+    weight_decay: float = 1e-3
     epochs: int = 100
     sync_batchnorm: bool = True
     # * acceleration
@@ -123,6 +123,8 @@ class TrainConfig:
     limit_test_batches: Optional[int] = None
     # * logging
     log_every_n_steps: int = 20
+    # * when do seprate testing, load the ckpt path
+    ckpt_path: Optional[str] = None
 
 
 @dataclass
@@ -139,6 +141,9 @@ class VisualizeConfig:
     log_epoch: Optional[int] = None
     # figs
     sgram_threshold: Optional[int] = None
+    # save test to seprate folder
+    log_test_seprate_folder: bool = False
+    log_test_seprate_folder_path: str = ""
 
 
 @dataclass
