@@ -151,5 +151,4 @@ Note.md
 slurm/
 saved_output/
 dataset-all/
-pyproject.toml
 poetry.lock
