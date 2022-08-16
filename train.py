@@ -18,7 +18,7 @@ warnings.filterwarnings(
     "ignore", ".*During `trainer.test()`, it is recommended to use `Trainer(devices=1)`*")
 
 
-@hydra.main(config_path="conf", config_name="config")
+@hydra.main(config_path="conf", config_name="config", version_base="1.2")
 def train_app(cfg: Config) -> None:
     train_conf = cfg.train
     # * seed
