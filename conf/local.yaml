@@ -1,12 +1,13 @@
 hydra:
   run:
     dir: outputs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
 defaults:
   - base_config
   - data: local
   - spectrogram: local
-  - model: sample
+  - model: local
   - train: local
-  - profile: sample
   - visualize: local
   - _self_

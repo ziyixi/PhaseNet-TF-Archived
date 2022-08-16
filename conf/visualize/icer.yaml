@@ -1,9 +1,7 @@
 defaults:
   - base_visualize
 
-example_num: 8
-log_train: true
 log_val: true
 log_test: true
-log_epoch: 15
+log_epoch: 30
 sgram_threshold: 500

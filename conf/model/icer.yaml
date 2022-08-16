@@ -1,4 +1,2 @@
 defaults:
   - base_model
-
-out_channels: 3
