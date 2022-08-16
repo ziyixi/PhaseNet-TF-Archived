@@ -123,6 +123,8 @@ class TrainConfig:
     limit_test_batches: Optional[int] = None
     # * logging
     log_every_n_steps: int = 20
+    # * when do seprate testing, load the ckpt path
+    ckpt_path: Optional[str] = None
 
 
 @dataclass
@@ -139,6 +141,9 @@ class VisualizeConfig:
     log_epoch: Optional[int] = None
     # figs
     sgram_threshold: Optional[int] = None
+    # save test to seprate folder
+    log_test_seprate_folder: bool = False
+    log_test_seprate_folder_path: str = ""
 
 
 @dataclass
