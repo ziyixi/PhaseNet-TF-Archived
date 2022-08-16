@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pytorch_lightning as pl
-from phasenet.conf.load_conf import DataConfig
+from phasenet.conf import DataConfig
 from torch.utils.data import DataLoader, random_split
 from torchvision.transforms import Compose
 

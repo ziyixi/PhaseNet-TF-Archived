@@ -6,7 +6,7 @@ custome transforms applied to waveform dataset.
 from typing import Dict
 
 import torch
-from phasenet.conf.load_conf import DataConfig
+from phasenet.conf import DataConfig
 
 
 class RandomShift:

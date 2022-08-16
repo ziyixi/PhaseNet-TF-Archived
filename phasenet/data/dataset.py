@@ -11,7 +11,7 @@ from typing import Dict, List
 
 import torch
 from obspy import UTCDateTime
-from phasenet.conf.load_conf import DataConfig
+from phasenet.conf import DataConfig
 from pyasdf import ASDFDataSet
 from torch.utils.data import Dataset
 

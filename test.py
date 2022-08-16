@@ -4,7 +4,7 @@ import hydra
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor
 
-from phasenet.conf.load_conf import Config
+from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
 from phasenet.data.lighting_data import WaveFormDataModule
 from phasenet.model.unet import UNet
@@ -18,7 +18,7 @@ warnings.filterwarnings(
     "ignore", ".*During `trainer.test()`, it is recommended to use `Trainer(devices=1)`*")
 
 
-@hydra.main(config_path="conf", config_name="config")
+@hydra.main(config_path="phasenet/conf", config_name="config")
 def test_app(cfg: Config) -> None:
     train_conf = cfg.train
     # * seed

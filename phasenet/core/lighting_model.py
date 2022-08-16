@@ -4,7 +4,7 @@ from typing import Dict
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from phasenet.conf.load_conf import Config
+from phasenet.conf import Config
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
 from phasenet.utils.visualize import VisualizeInfo
