@@ -1,3 +1,4 @@
+from os.path import join
 from typing import Dict
 
 import pytorch_lightning as pl
@@ -5,10 +6,10 @@ import torch
 import torch.nn as nn
 from phasenet.conf.load_conf import Config
 from phasenet.core.sgram import GenSgram
+from phasenet.model.unet import UNet
 from phasenet.utils.visualize import VisualizeInfo
 from pytorch_lightning.utilities import rank_zero_only
 from torch.utils.tensorboard import SummaryWriter
-from phasenet.model.unet import UNet
 
 
 class PhaseNetModel(pl.LightningModule):
@@ -199,6 +200,10 @@ class PhaseNetModel(pl.LightningModule):
             self.figs_test_store.extend(figs)
             if last_step:
                 tensorboard: SummaryWriter = self.logger.experiment
+                if self.visualize_conf.log_test_seprate_folder:
+                    for idx, each_fig in enumerate(self.figs_test_store):
+                        each_fig.savefig(
+                            join(self.visualize_conf.log_test_seprate_folder_path, f"{idx+1}.eps"))
                 tensorboard.add_figure(
                     "test/final", self.figs_test_store, global_step=self.current_epoch+1)
                 self.figs_test_store = []
