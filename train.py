@@ -2,7 +2,7 @@ import warnings
 
 import hydra
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
 
 from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
@@ -34,7 +34,10 @@ def train_app(cfg: Config) -> None:
     light_data.prepare_data()
 
     # * callbacks
-    lr_monitor = LearningRateMonitor(logging_interval='epoch')  # monitor lr
+    callbacks = []
+    callbacks.append(LearningRateMonitor(
+        logging_interval='epoch'))
+    callbacks.append(ModelSummary(max_depth=2))
 
     # * prepare trainner
     precision = 32
@@ -45,7 +48,7 @@ def train_app(cfg: Config) -> None:
             precision = 16
 
     trainer = Trainer(
-        callbacks=[lr_monitor],
+        callbacks=callbacks,
         accelerator=train_conf.accelerator,
         deterministic=train_conf.use_random_seed,
         devices=(
