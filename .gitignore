@@ -152,3 +152,4 @@ slurm/
 saved_output/
 dataset-all/
 poetry.lock
+pyproject.toml
