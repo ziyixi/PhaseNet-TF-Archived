@@ -33,7 +33,8 @@ class PhaseNetModel(pl.LightningModule):
                 first_layer_repeating_cnn=self.model_conf.first_layer_repeating_cnn,
                 n_freq=self.model_conf.n_freq,
                 ksize_down=self.model_conf.encoder_conv_kernel_size,
-                ksize_up=self.model_conf.decoder_conv_kernel_size
+                ksize_up=self.model_conf.decoder_conv_kernel_size,
+                encoder_decoder_depth=self.model_conf.encoder_decoder_depth
             )
         # * figure logger
         self.show_figs = VisualizeInfo(

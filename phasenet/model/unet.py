@@ -3,13 +3,15 @@ unet.py
 
 An Unet modificaion for the spectrogram based seismic phase picking
 """
+from collections import OrderedDict
 from typing import Tuple
 
 import torch
 import torch.nn as nn
 
-
 # * ============== define blocks ============== * #
+
+
 class RepeatingConv(nn.Module):
     """CNN(i->f) => BN => ReLU => (CNN(f->f) => BN => ReLU)*r"""
 
@@ -92,26 +94,35 @@ class Up(nn.Module):
 # * ============== define U-Net model ============== * #
 
 class UNet(nn.Module):
-    def __init__(self, features: int, in_cha: int, out_cha: int, first_layer_repeating_cnn: int, n_freq: int, ksize_down: Tuple[int, int], ksize_up: Tuple[int, int]):
+    def __init__(self, features: int, in_cha: int, out_cha: int, first_layer_repeating_cnn: int, n_freq: int, ksize_down: Tuple[int, int], ksize_up: Tuple[int, int], encoder_decoder_depth: int):
         super().__init__()
         # * encoders
-        self.enc1 = Down(in_cha, features,
-                         first_layer_repeating_cnn, n_freq, ksize_down)
-        self.enc2 = Down(features*1, features*2, 1, n_freq//2, ksize_down)
-        self.enc3 = Down(features*2, features*4, 1, n_freq//4, ksize_down)
-        self.enc4 = Down(features*4, features*8, 1, n_freq//8, ksize_down)
-        self.enc5 = Down(features*8, features*16, 1, n_freq//16, ksize_down)
+        self.encoder_dict = OrderedDict()
+        self.encoder_dict["enc1"] = Down(in_cha, features,
+                                         first_layer_repeating_cnn, n_freq, ksize_down)
+
+        # eg:
+        # self.enc2 = Down(features*1, features*2, 1, n_freq//2, ksize_down)
+        # self.enc3 = Down(features*2, features*4, 1, n_freq//4, ksize_down)
+        for idx in range(2, encoder_decoder_depth+1):
+            self.encoder_dict[f"enc{idx}"] = Down(
+                features*(2**(idx-2)), features*(2**(idx-1)), 1, n_freq//(2**(idx-1)), ksize_down)
+        self.encoder = nn.ModuleDict(self.encoder_dict)
 
         # * bottleneck
         self.bottleneck = BottleNeck(
-            features*16, features*32, 1, n_freq//32, ksize_down)
+            features*(2**(encoder_decoder_depth-1)), features*(2**encoder_decoder_depth), 1, n_freq//(2**encoder_decoder_depth), ksize_down)
 
         # * decoders
-        self.dec5 = Up(features*32, features*16, 1, ksize_up)
-        self.dec4 = Up(features*16, features*8, 1, ksize_up)
-        self.dec3 = Up(features*8, features*4, 1, ksize_up)
-        self.dec2 = Up(features*4, features*2, 1, ksize_up)
-        self.dec1 = Up(features*2, features*1, 1, ksize_up)
+        # eg:
+        # self.dec3 = Up(features*8, features*4, 1, ksize_up)
+        # self.dec2 = Up(features*4, features*2, 1, ksize_up)
+        # self.dec1 = Up(features*2, features*1, 1, ksize_up)
+        self.decoder_dict = OrderedDict()
+        for idx in range(encoder_decoder_depth, 0, -1):
+            self.decoder_dict[f"dec{idx}"] = Up(
+                features*(2**idx), features*(2**(idx-1)), 1, ksize_up)
+        self.decoder = nn.ModuleDict(self.decoder_dict)
 
         # * out
         self.conv_out = nn.Conv2d(
@@ -124,21 +135,26 @@ class UNet(nn.Module):
         x = x.transpose(-1, -2)
 
         # * encode
-        x, skip1 = self.enc1(x)
-        x, skip2 = self.enc2(x)
-        x, skip3 = self.enc3(x)
-        x, skip4 = self.enc4(x)
-        x, skip5 = self.enc5(x)
+        # eg:
+        # x, skip1 = self.enc1(x)
+        # x, skip2 = self.enc2(x)
+        # x, skip3 = self.enc3(x)
+        skips = []
+        for key in self.encoder:
+            x, skip = self.encoder[key](x)
+            skips.append(skip)
 
         # * bottleneck
         x = self.bottleneck(x)
 
         # * decode
-        x = self.dec5(x, skip5)
-        x = self.dec4(x, skip4)
-        x = self.dec3(x, skip3)
-        x = self.dec2(x, skip2)
-        x = self.dec1(x, skip1)
+        # eg:
+        # x = self.dec3(x, skip3)
+        # x = self.dec2(x, skip2)
+        # x = self.dec1(x, skip1)
+        skips = skips[::-1]
+        for skip_id, key in enumerate(self.decoder):
+            x = self.decoder[key](x, skips[skip_id])
 
         # * output
         x = self.conv_out(x)

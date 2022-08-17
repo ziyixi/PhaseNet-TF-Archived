@@ -98,6 +98,8 @@ class ModelConfig:
     decoder_conv_kernel_size: List[int] = field(
         default_factory=lambda: [5, 5])  # ! hyper tune
 
+    encoder_decoder_depth: int = 5  # ! hyper tune
+
 
 @dataclass
 class TrainConfig:
