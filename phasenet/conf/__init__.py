@@ -69,7 +69,7 @@ class SpectrogramConfig:
     """
     Set confiuration to generate the spectrogram from the waveform dataset
     """
-    n_fft: int = 256
+    n_fft: int = 256  # ! hyper tune
     hop_length: int = 1
     power: int = 2
     window_fn: str = "hann"
@@ -78,7 +78,7 @@ class SpectrogramConfig:
     sampling_rate: int = 40
     height: int = 64
     width: int = 4800  # should equal to win_len*sampling_rate
-    max_clamp: int = 3000
+    max_clamp: int = 3000  # ! hyper tune
 
 
 @dataclass
@@ -89,12 +89,14 @@ class ModelConfig:
     nn_model: str = "unet"
     in_channels: int = 3
     out_channels: int = 4
-    init_features: int = 32
+    init_features: int = 32  # ! hyper tune
     n_freq: int = 64  # should be the same as height in SpectrogramConfig
-    first_layer_repeating_cnn: int = 3
+    first_layer_repeating_cnn: int = 3  # ! hyper tune
 
-    encoder_conv_kernel_size: List[int] = field(default_factory=lambda: [5, 5])
-    decoder_conv_kernel_size: List[int] = field(default_factory=lambda: [5, 5])
+    encoder_conv_kernel_size: List[int] = field(
+        default_factory=lambda: [5, 5])  # ! hyper tune
+    decoder_conv_kernel_size: List[int] = field(
+        default_factory=lambda: [5, 5])  # ! hyper tune
 
 
 @dataclass
@@ -106,8 +108,8 @@ class TrainConfig:
     use_random_seed: bool = True
     random_seed: int = 666
     # * basic configs
-    learning_rate: float = 0.01
-    weight_decay: float = 1e-3
+    learning_rate: float = 0.01  # ! hyper tune
+    weight_decay: float = 1e-3  # ! hyper tune
     epochs: int = 100
     sync_batchnorm: bool = True
     # * acceleration
