@@ -1,3 +1,4 @@
+import logging
 import warnings
 
 import hydra
@@ -8,6 +9,9 @@ from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
 from phasenet.data.lighting_data import WaveFormDataModule
 from phasenet.model.unet import UNet
+from phasenet.utils.helper import get_git_revision_short_hash
+
+loger = logging.getLogger('lightning')
 
 # * ignores
 warnings.filterwarnings(
@@ -21,6 +25,9 @@ warnings.filterwarnings(
 @hydra.main(config_path="phasenet/conf", config_name="config")
 def test_app(cfg: Config) -> None:
     train_conf = cfg.train
+    # * current version
+    loger.info(f"current hash tag: {get_git_revision_short_hash()}")
+
     # * seed
     if train_conf.use_random_seed:
         seed_everything(train_conf.random_seed)
