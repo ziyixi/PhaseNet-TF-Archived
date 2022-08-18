@@ -150,4 +150,6 @@ class AUC(Metric):
                        ) if self.tp[idx]+self.fn[idx] != 0 else torch.tensor(0.0)
             fpr.append((self.fp[idx].float())/(self.fp[idx]+self.tn[idx])
                        ) if self.fp[idx]+self.tn[idx] != 0 else torch.tensor(0.0)
+        tpr = [each.item() for each in tpr]
+        fpr = [each.item() for each in fpr]
         return torch.trapezoid(torch.tensor(tpr[::-1]), torch.tensor(fpr[::-1]))
