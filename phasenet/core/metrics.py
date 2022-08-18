@@ -46,6 +46,8 @@ class MetricBase(Metric):
         f = (pred != targ)
         p = (pred == 1)
         n = (pred == 0)
+        # print("@@@@@@@@@@")
+        # print(torch.sum(t), torch.sum(f), torch.sum(p), torch.sum(n))
         self.tp += torch.sum(torch.logical_and(t, p))
         self.fp += torch.sum(torch.logical_and(f, p))
         self.fn += torch.sum(torch.logical_and(f, n))
@@ -65,6 +67,8 @@ class Precision(MetricBase):
         super().__init__(threshold)
 
     def compute(self):
+        if self.tp+self.fp == 0:
+            return torch.tensor(1.0)  # tp-fp curve, here recall will be 0
         return (self.tp.float())/(self.tp+self.fp)
 
 
@@ -73,6 +77,8 @@ class Recall(MetricBase):
         super().__init__(threshold)
 
     def compute(self):
+        if self.tp+self.fn == 0:
+            return torch.tensor(1.0)
         return (self.tp.float())/(self.tp+self.fn)
 
 
@@ -111,23 +117,25 @@ class AUC(Metric):
         self.thresholds[0] -= 0.00001
         self.thresholds[-1] += 0.00001
 
-        self.tpr_list: List[TPR] = []
-        self.fpr_list: List[FPR] = []
+        tpr_list: List[TPR] = []
+        fpr_list: List[FPR] = []
         for threshold in self.thresholds:
             val = threshold.detach().item()
-            self.tpr_list.append(TPR(val))
-            self.fpr_list.append(FPR(val))
+            tpr_list.append(TPR(val))
+            fpr_list.append(FPR(val))
+        self.tpr = nn.ModuleList(tpr_list)
+        self.fpr = nn.ModuleList(fpr_list)
 
     def update(self, predict: torch.Tensor, label: torch.Tensor):
         for idx, _ in enumerate(self.thresholds):
-            self.tpr_list[idx].update(predict, label)
-            self.fpr_list[idx].update(predict, label)
+            self.tpr[idx].update(predict, label)
+            self.fpr[idx].update(predict, label)
 
     def compute(self):
-        tpr_vals = torch.tensor([item.compute() for item in self.tpr_list])
-        fpr_vals = torch.tensor([item.compute() for item in self.fpr_list])
-        for item in self.tpr_list:
+        tpr_vals = torch.tensor([item.compute() for item in self.tpr])
+        fpr_vals = torch.tensor([item.compute() for item in self.fpr])
+        for item in self.tpr:
             item.reset()
-        for item in self.fpr_list:
+        for item in self.fpr:
             item.reset()
         return torch.trapz(tpr_vals, fpr_vals)
