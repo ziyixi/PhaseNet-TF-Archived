@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from os.path import join
 from typing import Dict, List
 
@@ -5,7 +6,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from phasenet.conf import Config
-from phasenet.core.metrics import KlDiv
+from phasenet.core.metrics import AUC, F1, Accuracy, KlDiv, Precision, Recall
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
 from phasenet.utils.visualize import VisualizeInfo
@@ -52,17 +53,38 @@ class PhaseNetModel(pl.LightningModule):
         self.figs_val_store = []
         self.figs_test_store = []
 
-        # * loss and metrics
+        # * loss
         self.train_loss = KlDiv()
         self.val_loss = KlDiv()
         self.test_loss = KlDiv()
+
+        # * metrics
+        metrics_dict = OrderedDict()
+        for stage in ["train", "val", "test"]:
+            self.metrics_dict[stage] = OrderedDict()
+            self.metrics_dict[stage]["accuracy"] = Accuracy(
+                self.train_conf.metrics_threshold)
+            self.metrics_dict[stage]["precision"] = Precision(
+                self.train_conf.metrics_threshold)
+            self.metrics_dict[stage]["recall"] = Recall(
+                self.train_conf.metrics_threshold)
+            self.metrics_dict[stage]["f1"] = F1(
+                self.train_conf.metrics_threshold)
+            self.metrics_dict[stage]["auc"] = AUC(
+                self.train_conf.metrics_auc_dt)
+        self.metrics = torch.ModuleDict(metrics_dict)
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(
             batch, batch_idx, "train")
         # * logging
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
-        self.log_dict({"Loss/train": self.train_loss, "step": self.current_epoch + 1.0},
+        log_content = {"Loss/train": self.train_loss,
+                       "step": self.current_epoch + 1.0}
+        for key in self.metrics["train"]:
+            self.metrics["train"][key](predict, batch["label"])
+            log_content[f"Metrics/train/{key}"] = self.metrics["train"][key]
+        self.log_dict(log_content,
                       on_step=False, on_epoch=True, batch_size=len(batch["data"]), prog_bar=True)
         self._log_figs(batch, batch_idx, sgram, predict, "train")
         # * return misfit
@@ -70,30 +92,38 @@ class PhaseNetModel(pl.LightningModule):
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "val")
-        self.log_dict({"Loss/validation": self.val_loss, "step": self.current_epoch + 1.0}, on_step=False,
+        log_content = {"Loss/validation": self.val_loss,
+                       "step": self.current_epoch + 1.0}
+        for key in self.metrics["val"]:
+            self.metrics["val"][key](predict, batch["label"])
+            log_content[f"Metrics/val/{key}"] = self.metrics["val"][key]
+        self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), prog_bar=True)
         self._log_figs(batch, batch_idx, sgram, predict, "val")
-        return {
-            "loss": loss
-        }
+        return loss
 
     def test_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "test")
         # * note we are logging loss but not self.test_loss, and manually compute/reset test metrics to add hyper parameters
-        self.log("Test Loss", loss, on_step=False,
-                 on_epoch=True, batch_size=len(batch['data']))
+        log_content = {"Loss/test": loss}
+        for key in self.metrics["test"]:
+            log_content[f"Metrics/test/{key}"] = self.metrics["test"][key](
+                predict, batch["label"])
+        self.log_dict(log_content, on_step=False,
+                      on_epoch=True, batch_size=len(batch['data']))
         self._log_figs(batch, batch_idx, sgram, predict, "test")
 
-        return {
-            "loss": loss
-        }
+        return loss
 
     def test_epoch_end(self, outputs: List[Dict]):
         metrics = {
-            "metric/test_loss": self.test_loss.compute()
+            "Metrics/test_loss": self.test_loss.compute()
         }
-        # actually not needed as only one epoch is presented
         self.test_loss.reset()
+        for key in self.metrics["test"]:
+            metrics[f"Metrics/{key}"] = self.metrics["test"][key].compute()
+            self.metrics["test"][key].reset()
+        # actually not needed as only one epoch is presented
         self.log_hparms(metrics)
 
     def _shared_eval_step(self, batch: Dict, batch_idx: int, stage: str) -> torch.Tensor:

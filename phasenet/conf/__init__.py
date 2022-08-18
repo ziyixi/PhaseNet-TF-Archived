@@ -129,6 +129,9 @@ class TrainConfig:
     log_every_n_steps: int = 1
     # * when do seprate testing, load the ckpt path
     ckpt_path: Optional[str] = None
+    # * metrics
+    metrics_threshold: float = 0.2
+    metrics_auc_dt: float = 0.05
 
 
 @dataclass
