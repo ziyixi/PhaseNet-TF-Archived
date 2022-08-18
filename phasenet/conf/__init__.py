@@ -126,7 +126,7 @@ class TrainConfig:
     limit_val_batches: Optional[int] = None
     limit_test_batches: Optional[int] = None
     # * logging
-    log_every_n_steps: int = 20
+    log_every_n_steps: int = 1
     # * when do seprate testing, load the ckpt path
     ckpt_path: Optional[str] = None
 

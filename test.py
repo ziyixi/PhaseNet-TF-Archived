@@ -11,7 +11,7 @@ from phasenet.data.lighting_data import WaveFormDataModule
 from phasenet.model.unet import UNet
 from phasenet.utils.helper import get_git_revision_short_hash
 
-loger = logging.getLogger('lightning')
+logger = logging.getLogger('lightning')
 
 # * ignores
 warnings.filterwarnings(
@@ -26,7 +26,7 @@ warnings.filterwarnings(
 def test_app(cfg: Config) -> None:
     train_conf = cfg.train
     # * current version
-    loger.info(f"current hash tag: {get_git_revision_short_hash()}")
+    logger.info(f"current hash tag: {get_git_revision_short_hash()}")
 
     # * seed
     if train_conf.use_random_seed:

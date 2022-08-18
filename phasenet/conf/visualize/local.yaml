@@ -9,3 +9,6 @@ log_test: true
 
 log_epoch: 2
 sgram_threshold: 500
+
+log_test_seprate_folder: true
+log_test_seprate_folder_path: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/figs
