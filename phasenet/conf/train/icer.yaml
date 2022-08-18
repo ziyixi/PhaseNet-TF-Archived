@@ -5,13 +5,13 @@ epochs: 100
 
 accelerator: gpu
 strategy: ddp_find_unused_parameters_false
-# use_amp: true
-# use_a100: true
+use_amp: true
+use_a100: true
 
 distributed_devices:
-  # - 0
+  - 0
   - 1
   - 2
-  # - 3
+  - 3
 
-ckpt_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline/2022-05-09_18-20-25/lightning_logs/version_53239022/checkpoints/epoch=99-step=100.ckpt
+ckpt_path: ???
