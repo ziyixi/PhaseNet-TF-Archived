@@ -46,8 +46,7 @@ class MetricBase(Metric):
         f = (pred != targ)
         p = (pred == 1)
         n = (pred == 0)
-        # print("@@@@@@@@@@")
-        # print(torch.sum(t), torch.sum(f), torch.sum(p), torch.sum(n))
+
         self.tp += torch.sum(torch.logical_and(t, p))
         self.fp += torch.sum(torch.logical_and(f, p))
         self.fn += torch.sum(torch.logical_and(f, n))
@@ -87,8 +86,10 @@ class F1(MetricBase):
         super().__init__(threshold)
 
     def compute(self):
-        precision = (self.tp.float())/(self.tp+self.fp)
-        recall = (self.tp.float())/(self.tp+self.fn)
+        precision = (self.tp.float())/(self.tp+self.fp) if self.tp + \
+            self.fp != 0 else torch.tensor(1.0)
+        recall = (self.tp.float())/(self.tp+self.fn) if self.tp + \
+            self.fn != 0 else torch.tensor(1.0)
         return 2*precision*recall/(precision+recall)
 
 
@@ -117,25 +118,36 @@ class AUC(Metric):
         self.thresholds[0] -= 0.00001
         self.thresholds[-1] += 0.00001
 
-        tpr_list: List[TPR] = []
-        fpr_list: List[FPR] = []
-        for threshold in self.thresholds:
-            val = threshold.detach().item()
-            tpr_list.append(TPR(val))
-            fpr_list.append(FPR(val))
-        self.tpr = nn.ModuleList(tpr_list)
-        self.fpr = nn.ModuleList(fpr_list)
+        self.add_state("tp", default=torch.zeros(len(self.thresholds)),
+                       dist_reduce_fx="sum")
+        self.add_state("fp", default=torch.zeros(len(self.thresholds)),
+                       dist_reduce_fx="sum")
+        self.add_state("fn", default=torch.zeros(len(self.thresholds)),
+                       dist_reduce_fx="sum")
+        self.add_state("tn", default=torch.zeros(len(self.thresholds)),
+                       dist_reduce_fx="sum")
 
     def update(self, predict: torch.Tensor, label: torch.Tensor):
-        for idx, _ in enumerate(self.thresholds):
-            self.tpr[idx].update(predict, label)
-            self.fpr[idx].update(predict, label)
+        for idx, threshold in enumerate(self.thresholds):
+            pred = (predict[:, 1:, :] > threshold).int()
+            targ = (label[:, 1:, :] > threshold).int()
+
+            t = (pred == targ)
+            f = (pred != targ)
+            p = (pred == 1)
+            n = (pred == 0)
+
+            self.tp[idx] += torch.sum(torch.logical_and(t, p))
+            self.fp[idx] += torch.sum(torch.logical_and(f, p))
+            self.fn[idx] += torch.sum(torch.logical_and(f, n))
+            self.tn[idx] += torch.sum(torch.logical_and(t, n))
 
     def compute(self):
-        tpr_vals = torch.tensor([item.compute() for item in self.tpr])
-        fpr_vals = torch.tensor([item.compute() for item in self.fpr])
-        for item in self.tpr:
-            item.reset()
-        for item in self.fpr:
-            item.reset()
-        return torch.trapz(tpr_vals, fpr_vals)
+        tpr = []
+        fpr = []
+        for idx, _ in enumerate(self.thresholds):
+            tpr.append((self.tp[idx].float())/(self.tp[idx]+self.fn[idx])
+                       ) if self.tp[idx]+self.fn[idx] != 0 else torch.tensor(0.0)
+            fpr.append((self.fp[idx].float())/(self.fp[idx]+self.tn[idx])
+                       ) if self.fp[idx]+self.tn[idx] != 0 else torch.tensor(0.0)
+        return torch.trapezoid(torch.tensor(tpr[::-1]), torch.tensor(fpr[::-1]))

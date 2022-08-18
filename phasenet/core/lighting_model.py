@@ -62,16 +62,16 @@ class PhaseNetModel(pl.LightningModule):
         metrics_dict = OrderedDict()
         for stage in ["metrics_train", "metrics_val", "metrics_test"]:
             metrics_dict[stage] = OrderedDict()
-        #     metrics_dict[stage]["accuracy"] = Accuracy(
-        #         self.train_conf.metrics_threshold)
-        #     metrics_dict[stage]["precision"] = Precision(
-        #         self.train_conf.metrics_threshold)
-        #     metrics_dict[stage]["recall"] = Recall(
-        #         self.train_conf.metrics_threshold)
-        #     metrics_dict[stage]["f1"] = F1(
-        #         self.train_conf.metrics_threshold)
-        #     metrics_dict[stage]["auc"] = AUC(
-        #         self.train_conf.metrics_auc_dt)
+            metrics_dict[stage]["accuracy"] = Accuracy(
+                self.train_conf.metrics_threshold)
+            metrics_dict[stage]["precision"] = Precision(
+                self.train_conf.metrics_threshold)
+            metrics_dict[stage]["recall"] = Recall(
+                self.train_conf.metrics_threshold)
+            metrics_dict[stage]["f1"] = F1(
+                self.train_conf.metrics_threshold)
+            metrics_dict[stage]["auc"] = AUC(
+                self.train_conf.metrics_auc_dt)
             metrics_dict[stage] = nn.ModuleDict(metrics_dict[stage])
         self.metrics = nn.ModuleDict(metrics_dict)
 
@@ -228,7 +228,7 @@ class PhaseNetModel(pl.LightningModule):
                     if self.visualize_conf.log_test_seprate_folder and stage == "test":
                         for idx, each_fig in enumerate(self.figs_test_store):
                             each_fig.savefig(
-                                join(self.visualize_conf.log_test_seprate_folder_path, f"{idx+1}.eps"))
+                                join(self.visualize_conf.log_test_seprate_folder_path, f"{idx+1}.pdf"))
                     tensorboard.add_figure(
                         tag, figs_store[stage], global_step=self.current_epoch+1)
                     figs_store[stage] = []
