@@ -22,6 +22,7 @@ matplotlib = "^3.5.1"
 numpy = "^1.22.3"
 tensorboard = "^2.8.0"
 pytorch-lightning = "^1.7.0"
+torchmetrics = "^0.9.3"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.13.7"
