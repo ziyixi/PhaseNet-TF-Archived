@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from phasenet.conf import Config
-from phasenet.core.metrics import AUC, F1, Accuracy, KlDiv, Precision, Recall
+from phasenet.core.metrics import F1, Accuracy, KlDiv, Precision, Recall
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
 from phasenet.utils.visualize import VisualizeInfo
@@ -70,8 +70,6 @@ class PhaseNetModel(pl.LightningModule):
                 self.train_conf.metrics_threshold)
             metrics_dict[stage]["f1"] = F1(
                 self.train_conf.metrics_threshold)
-            metrics_dict[stage]["auc"] = AUC(
-                self.train_conf.metrics_auc_dt)
             metrics_dict[stage] = nn.ModuleDict(metrics_dict[stage])
         self.metrics = nn.ModuleDict(metrics_dict)
 
@@ -86,7 +84,7 @@ class PhaseNetModel(pl.LightningModule):
             self.metrics["metrics_train"][key](predict, batch["label"])
             log_content[f"Metrics/train/{key}"] = self.metrics["metrics_train"][key]
         self.log_dict(log_content,
-                      on_step=False, on_epoch=True, batch_size=len(batch["data"]), prog_bar=True)
+                      on_step=False, on_epoch=True, batch_size=len(batch["data"]), prog_bar=True, sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "train")
         # * return misfit
         return loss
@@ -99,7 +97,7 @@ class PhaseNetModel(pl.LightningModule):
             self.metrics["metrics_val"][key](predict, batch["label"])
             log_content[f"Metrics/val/{key}"] = self.metrics["metrics_val"][key]
         self.log_dict(log_content, on_step=False,
-                      on_epoch=True, batch_size=len(batch['data']), prog_bar=True)
+                      on_epoch=True, batch_size=len(batch['data']), prog_bar=True, sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "val")
         return loss
 
@@ -111,7 +109,7 @@ class PhaseNetModel(pl.LightningModule):
             log_content[f"Metrics/test/{key}"] = self.metrics["metrics_test"][key](
                 predict, batch["label"])
         self.log_dict(log_content, on_step=False,
-                      on_epoch=True, batch_size=len(batch['data']))
+                      on_epoch=True, batch_size=len(batch['data']), sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "test")
 
         return loss
