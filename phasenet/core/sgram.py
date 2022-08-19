@@ -1,6 +1,6 @@
 import torch
 import torchvision.transforms.functional as F
-from phasenet.conf.load_conf import SpectrogramConfig
+from phasenet.conf import SpectrogramConfig
 from torchaudio.transforms import Spectrogram
 
 

@@ -1,13 +1,17 @@
+import logging
 import warnings
 
 import hydra
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
 
-from phasenet.conf.load_conf import Config
+from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
 from phasenet.data.lighting_data import WaveFormDataModule
 from phasenet.model.unet import UNet
+from phasenet.utils.helper import get_git_revision_short_hash
+
+logger = logging.getLogger('lightning')
 
 # * ignores
 warnings.filterwarnings(
@@ -18,9 +22,12 @@ warnings.filterwarnings(
     "ignore", ".*During `trainer.test()`, it is recommended to use `Trainer(devices=1)`*")
 
 
-@hydra.main(config_path="conf", config_name="config", version_base="1.2")
+@hydra.main(config_path="phasenet/conf", config_name="config", version_base="1.2")
 def train_app(cfg: Config) -> None:
     train_conf = cfg.train
+    # * current version
+    logger.info(f"current hash tag: {get_git_revision_short_hash()}")
+
     # * seed
     if train_conf.use_random_seed:
         seed_everything(train_conf.random_seed)
@@ -34,7 +41,10 @@ def train_app(cfg: Config) -> None:
     light_data.prepare_data()
 
     # * callbacks
-    lr_monitor = LearningRateMonitor(logging_interval='epoch')  # monitor lr
+    callbacks = []
+    callbacks.append(LearningRateMonitor(
+        logging_interval='epoch'))
+    callbacks.append(ModelSummary(max_depth=2))
 
     # * prepare trainner
     precision = 32
@@ -45,7 +55,7 @@ def train_app(cfg: Config) -> None:
             precision = 16
 
     trainer = Trainer(
-        callbacks=[lr_monitor],
+        callbacks=callbacks,
         accelerator=train_conf.accelerator,
         deterministic=train_conf.use_random_seed,
         devices=(
