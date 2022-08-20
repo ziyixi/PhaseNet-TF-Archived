@@ -78,7 +78,7 @@ def test_app(cfg: Config) -> None:
     # * test
     light_data.setup(stage="test")
     trainer.test(model=light_model,
-                 datamodule=train_conf.ckpt_path, ckpt_path=train_conf.ckpt_path)
+                 datamodule=light_data, ckpt_path=train_conf.ckpt_path)
 
 
 if __name__ == "__main__":
