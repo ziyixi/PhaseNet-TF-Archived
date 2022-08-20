@@ -4,7 +4,7 @@ load_conf.py
 load configuration files for the project.
 """
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from hydra.core.config_store import ConfigStore
 from omegaconf import MISSING
@@ -129,9 +129,6 @@ class TrainConfig:
     log_every_n_steps: int = 1
     # * when do seprate testing, load the ckpt path
     ckpt_path: Optional[str] = None
-    # * metrics
-    metrics_threshold: float = 0.2
-    metrics_auc_dt: float = 0.05
 
 
 @dataclass
@@ -154,6 +151,29 @@ class VisualizeConfig:
 
 
 @dataclass
+class PostProcessConfig:
+    """
+    post process the model output, such as finding peak, cal metrics etc.
+    """
+    # metrics
+    metrics_dt_threshold: float = 0.5
+
+    # peaks
+    sensitive_heights: Dict[str, float] = field(
+        default_factory=lambda: {
+            "TP": 0.5,
+            "TS": 0.5,
+            "TPS": 0.3
+        })  # the peaks must have possibility at
+    sensitive_distances: Dict[str, float] = field(
+        default_factory=lambda: {
+            "TP": 1.0,
+            "TS": 1.0,
+            "TPS": 1.0
+        })  # when finding peaks, ignore close peaks in seconds
+
+
+@dataclass
 class Config:
     """
     the configuration for the project
@@ -163,6 +183,7 @@ class Config:
     model: ModelConfig = MISSING
     train: TrainConfig = MISSING
     visualize: VisualizeConfig = MISSING
+    postprocess: PostProcessConfig = MISSING
 
 
 cs = ConfigStore.instance()
@@ -172,3 +193,4 @@ cs.store(group="spectrogram", name="base_spectrogram", node=SpectrogramConfig)
 cs.store(group="model", name="base_model", node=ModelConfig)
 cs.store(group="train", name="base_train", node=TrainConfig)
 cs.store(group="visualize", name="base_visualize", node=VisualizeConfig)
+cs.store(group="postprocess", name="base_postprocess", node=PostProcessConfig)

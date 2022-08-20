@@ -10,4 +10,5 @@ defaults:
   - model: icer
   - train: icer
   - visualize: icer
+  - postprocess: icer
   - _self_

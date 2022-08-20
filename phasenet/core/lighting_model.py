@@ -6,12 +6,14 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from phasenet.conf import Config
-from phasenet.core.metrics import F1, Accuracy, KlDiv, Precision, Recall
+from phasenet.core.loss import KlDiv
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
+from phasenet.utils.metrics import F1, Precision, Recall
 from phasenet.utils.visualize import VisualizeInfo
 from pytorch_lightning.utilities import rank_zero_only
 from torch.utils.tensorboard import SummaryWriter
+from phasenet.utils.peaks import extract_peaks
 
 
 class PhaseNetModel(pl.LightningModule):
@@ -62,14 +64,18 @@ class PhaseNetModel(pl.LightningModule):
         metrics_dict = OrderedDict()
         for stage in ["metrics_train", "metrics_val", "metrics_test"]:
             metrics_dict[stage] = OrderedDict()
-            metrics_dict[stage]["accuracy"] = Accuracy(
-                self.train_conf.metrics_threshold)
-            metrics_dict[stage]["precision"] = Precision(
-                self.train_conf.metrics_threshold)
-            metrics_dict[stage]["recall"] = Recall(
-                self.train_conf.metrics_threshold)
-            metrics_dict[stage]["f1"] = F1(
-                self.train_conf.metrics_threshold)
+            for iphase, phase in enumerate(conf.data.phases):
+                metrics_dict[stage][phase] = OrderedDict()
+
+                metrics_dict[stage][phase]["precision"] = Precision(iphase, int(
+                    conf.postprocess.metrics_dt_threshold*conf.spectrogram.sampling_rate), conf.data.width)
+                metrics_dict[stage][phase]["recall"] = Recall(iphase, int(
+                    conf.postprocess.metrics_dt_threshold*conf.spectrogram.sampling_rate), conf.data.width)
+                metrics_dict[stage][phase]["f1"] = F1(iphase, int(
+                    conf.postprocess.metrics_dt_threshold*conf.spectrogram.sampling_rate), conf.data.width)
+
+                metrics_dict[stage][phase] = nn.ModuleDict(
+                    metrics_dict[stage][phase])
             metrics_dict[stage] = nn.ModuleDict(metrics_dict[stage])
         self.metrics = nn.ModuleDict(metrics_dict)
 
@@ -80,9 +86,13 @@ class PhaseNetModel(pl.LightningModule):
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
         log_content = {"Loss/train": self.train_loss,
                        "step": self.current_epoch + 1.0}
-        for key in self.metrics["metrics_train"]:
-            self.metrics["metrics_train"][key](predict, batch["label"])
-            log_content[f"Metrics/train/{key}"] = self.metrics["metrics_train"][key]
+        for phase in self.metrics["metrics_train"]:
+            for key in self.metrics["metrics_train"][phase]:
+                predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                                                 self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
+                self.metrics["metrics_train"][phase][key](
+                    predict_arrivals, batch["arrivals"])
+                log_content[f"Metrics/train/{phase}/{key}"] = self.metrics["metrics_train"][phase][key]
         self.log_dict(log_content,
                       on_step=False, on_epoch=True, batch_size=len(batch["data"]), prog_bar=True, sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "train")
@@ -93,9 +103,13 @@ class PhaseNetModel(pl.LightningModule):
         loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "val")
         log_content = {"Loss/validation": self.val_loss,
                        "step": self.current_epoch + 1.0}
-        for key in self.metrics["metrics_val"]:
-            self.metrics["metrics_val"][key](predict, batch["label"])
-            log_content[f"Metrics/val/{key}"] = self.metrics["metrics_val"][key]
+        for phase in self.metrics["metrics_val"]:
+            for key in self.metrics["metrics_val"][phase]:
+                predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                                                 self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
+                self.metrics["metrics_val"][phase][key](
+                    predict_arrivals, batch["arrivals"])
+                log_content[f"Metrics/val/{phase}/{key}"] = self.metrics["metrics_val"][phase][key]
         self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), prog_bar=True, sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "val")
@@ -105,9 +119,12 @@ class PhaseNetModel(pl.LightningModule):
         loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "test")
         # * note we are logging loss but not self.test_loss, and manually compute/reset test metrics to add hyper parameters
         log_content = {"Loss/test": loss}
-        for key in self.metrics["metrics_test"]:
-            log_content[f"Metrics/test/{key}"] = self.metrics["metrics_test"][key](
-                predict, batch["label"])
+        for phase in self.metrics["metrics_test"]:
+            for key in self.metrics["metrics_test"][phase]:
+                predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                                                 self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
+                log_content[f"Metrics/test/{phase}/{key}"] = self.metrics["metrics_test"][phase][key](
+                    predict_arrivals, batch["arrivals"])
         self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "test")
@@ -119,9 +136,10 @@ class PhaseNetModel(pl.LightningModule):
             "Metrics/test_loss": self.test_loss.compute()
         }
         self.test_loss.reset()
-        for key in self.metrics["metrics_test"]:
-            metrics[f"Metrics/{key}"] = self.metrics["metrics_test"][key].compute()
-            self.metrics["metrics_test"][key].reset()
+        for phase in self.metrics["metrics_test"]:
+            for key in self.metrics["metrics_test"][phase]:
+                metrics[f"Metrics/{phase}/{key}"] = self.metrics["metrics_test"][phase][key].compute()
+                self.metrics["metrics_test"][phase][key].reset()
         # actually not needed as only one epoch is presented
         self.log_hparms(metrics)
 
