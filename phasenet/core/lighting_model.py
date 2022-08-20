@@ -229,4 +229,4 @@ class PhaseNetModel(pl.LightningModule):
                                 join(self.visualize_conf.log_test_seprate_folder_path, f"{idx+1}.pdf"))
                     tensorboard.add_figure(
                         tag, figs_store[stage], global_step=self.current_epoch+1)
-                    figs_store[stage] = []
+                    figs_store[stage].clear()
