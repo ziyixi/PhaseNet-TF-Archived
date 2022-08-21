@@ -1,7 +1,0 @@
-defaults:
-  - base_data
-
-data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-all
-train: tongaml_train.h5
-test: tongaml_test.h5
-val: tongaml_val.h5

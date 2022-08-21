@@ -1,0 +1,24 @@
+# @package _global_
+data:
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-all
+  train: tongaml_train.h5
+  test: tongaml_test.h5
+  val: tongaml_val.h5
+
+train:
+  epochs: 100
+
+  accelerator: gpu
+  strategy: ddp_find_unused_parameters_false
+  use_amp: true
+  use_a100: true
+
+  distributed_devices: [0, 1, 2, 3]
+
+visualize:
+  log_val: true
+  log_test: true
+  log_epoch: 30
+  sgram_threshold: 500
+  log_test_seprate_folder: false
+  log_test_seprate_folder_path: ""

@@ -4,8 +4,9 @@ load_conf.py
 load configuration files for the project.
 """
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
+from hydra.conf import HydraConf, RunDir, JobConf
 from hydra.core.config_store import ConfigStore
 from omegaconf import MISSING
 
@@ -173,11 +174,37 @@ class PostProcessConfig:
         })  # when finding peaks, ignore close peaks in seconds
 
 
+# * ======================================== * #
+# * main conf
+defaults = [
+    # Load the config "mysql" from the config group "db"
+    {"data": "base_data"},
+    {"spectrogram": "base_spectrogram"},
+    {"model": "base_model"},
+    {"train": "base_train"},
+    {"visualize": "base_visualize"},
+    {"postprocess": "base_postprocess"},
+    "_self_"
+]
+
+
+@dataclass
+class Hydra(HydraConf):
+    # run: RunDir = RunDir("${output_dir}")
+    run: RunDir = RunDir(
+        dir="outputs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}")
+    job: JobConf = JobConf(chdir=True)
+
+
 @dataclass
 class Config:
     """
     the configuration for the project
     """
+    defaults: List[Any] = field(default_factory=lambda: defaults)
+    # * custom
+    hydra: Hydra = Hydra()
+    # * settings
     data: DataConfig = MISSING
     spectrogram: SpectrogramConfig = MISSING
     model: ModelConfig = MISSING

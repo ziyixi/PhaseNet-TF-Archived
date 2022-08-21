@@ -1,0 +1,35 @@
+# @package _global_
+data:
+  data_dir: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset
+  train: tongaml_train.h5
+  test: tongaml_test.h5
+  val: tongaml_val.h5
+
+  train_batch_size: 4
+  val_batch_size: 2
+  test_batch_size: 2
+  train_shuffle: false
+
+train:
+  epochs: 3
+
+  limit_train_batches: 2
+  limit_val_batches: 4
+  limit_test_batches: 4
+
+visualize:
+  example_num: 5
+
+  log_train: false
+  log_val: false
+  log_test: false
+
+  log_epoch: 2
+  sgram_threshold: 500
+
+  log_test_seprate_folder: false
+  log_test_seprate_folder_path: ""
+
+hydra:
+  job:
+    name: test
