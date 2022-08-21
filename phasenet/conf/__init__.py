@@ -156,7 +156,7 @@ class PostProcessConfig:
     post process the model output, such as finding peak, cal metrics etc.
     """
     # metrics
-    metrics_dt_threshold: float = 0.5
+    metrics_dt_threshold: float = 1.0
 
     # peaks
     sensitive_heights: Dict[str, float] = field(

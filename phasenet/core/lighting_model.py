@@ -123,8 +123,11 @@ class PhaseNetModel(pl.LightningModule):
             for key in self.metrics["metrics_test"][phase]:
                 predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
                                                  self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
-                log_content[f"Metrics/test/{phase}/{key}"] = self.metrics["metrics_test"][phase][key](
+                # use .update to avoid automatically call compute
+                # also note log Metrics with on_epoch will use Metrics' reduction, which is what we desire (not planning to mean all precision)
+                self.metrics["metrics_test"][phase][key].update(
                     predict_arrivals, batch["arrivals"])
+                log_content[f"Metrics/test/{phase}/{key}"] = self.metrics["metrics_test"][phase][key]
         self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict, "test")
