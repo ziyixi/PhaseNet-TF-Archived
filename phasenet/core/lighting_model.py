@@ -84,7 +84,7 @@ class PhaseNetModel(pl.LightningModule):
             batch, batch_idx, "train")
         # * logging
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
-        log_content = {"Loss/train": self.train_loss,
+        log_content = {"loss_train": self.train_loss,
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_train"]:
             for key in self.metrics["metrics_train"][phase]:
@@ -101,7 +101,7 @@ class PhaseNetModel(pl.LightningModule):
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "val")
-        log_content = {"Loss/validation": self.val_loss,
+        log_content = {"loss_val": self.val_loss,
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_val"]:
             for key in self.metrics["metrics_val"][phase]:
@@ -118,7 +118,7 @@ class PhaseNetModel(pl.LightningModule):
     def test_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "test")
         # * note we are logging loss but not self.test_loss, and manually compute/reset test metrics to add hyper parameters
-        log_content = {"Loss/test": loss}
+        log_content = {"loss_test": loss}
         for phase in self.metrics["metrics_test"]:
             for key in self.metrics["metrics_test"][phase]:
                 predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
