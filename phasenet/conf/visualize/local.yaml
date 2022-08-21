@@ -3,12 +3,12 @@ defaults:
 
 example_num: 5
 
-log_train: true
-log_val: true
-log_test: true
+log_train: false
+log_val: false
+log_test: false
 
 log_epoch: 2
 sgram_threshold: 500
 
-log_test_seprate_folder: true
-log_test_seprate_folder_path: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/figs
+log_test_seprate_folder: false
+log_test_seprate_folder_path: ???

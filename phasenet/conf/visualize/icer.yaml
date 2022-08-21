@@ -5,5 +5,5 @@ log_val: true
 log_test: true
 log_epoch: 30
 sgram_threshold: 500
-log_test_seprate_folder: true
-log_test_seprate_folder_path: /mnt/ufs18/home-024/xiziyi/Packages_Research/PhaseNet-PyTorch/figs
+log_test_seprate_folder: false
+log_test_seprate_folder_path: ???

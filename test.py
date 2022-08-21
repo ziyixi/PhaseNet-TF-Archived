@@ -22,7 +22,7 @@ warnings.filterwarnings(
     "ignore", ".*During `trainer.test()`, it is recommended to use `Trainer(devices=1)`*")
 
 
-@hydra.main(config_path="phasenet/conf", config_name="config")
+@hydra.main(config_path="phasenet/conf", config_name="config", version_base="1.2")
 def test_app(cfg: Config) -> None:
     train_conf = cfg.train
     # * current version
@@ -78,7 +78,7 @@ def test_app(cfg: Config) -> None:
     # * test
     light_data.setup(stage="test")
     trainer.test(model=light_model,
-                 datamodule=train_conf.ckpt_path, ckpt_path=train_conf.ckpt_path)
+                 datamodule=light_data, ckpt_path=train_conf.ckpt_path)
 
 
 if __name__ == "__main__":

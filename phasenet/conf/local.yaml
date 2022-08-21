@@ -10,4 +10,5 @@ defaults:
   - model: local
   - train: local
   - visualize: local
+  - postprocess: local
   - _self_
