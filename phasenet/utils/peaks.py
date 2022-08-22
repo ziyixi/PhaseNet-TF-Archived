@@ -25,7 +25,7 @@ def extract_peaks(predict_batch: torch.Tensor, phases: List[str], sensitive_heig
         predict_arrival_amps.append([])
         for iphase, phase in enumerate(phases):
             # find peaks
-            peaks_idx, peaks_amp = extract_peaks_single_phase(signal=predict_batch[ibatch][iphase+1].detach().cpu().numpy(),
+            peaks_idx, peaks_amp = extract_peaks_single_phase(signal=predict_batch[ibatch][iphase+1].detach().to(dtype=torch.float32).cpu().numpy(),
                                                               sensitive_height=sensitive_heights[phase],
                                                               sensitive_distance=sensitive_distances[phase],
                                                               sampling_rate=sampling_rate)

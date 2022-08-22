@@ -50,7 +50,7 @@ def train_app(cfg: Config) -> None:
     callbacks.append(ModelCheckpoint(
         save_top_k=3, monitor="loss_val", mode="min", filename="{epoch:02d}-{loss_val:.2f}"))
     callbacks.append(EarlyStopping(monitor="loss_val",
-                     patience=10, verbose=False, mode="min", check_finite=False))
+                     patience=30, verbose=False, mode="min", check_finite=False))
 
     # * prepare trainner
     precision = 32

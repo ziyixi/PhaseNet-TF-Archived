@@ -4,9 +4,12 @@ data:
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
+  train_trans: ["shift", "scale", "label"]
+  val_trans: ["scale", "label"]
+  test_trans: ["scale", "label"]
 
 train:
-  epochs: 100
+  epochs: 200
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
@@ -23,7 +26,6 @@ visualize:
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
 
-
 hydra:
   job:
-    name: test
+    name: baseline

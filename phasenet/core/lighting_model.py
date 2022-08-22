@@ -6,7 +6,6 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from phasenet.conf import Config
-from phasenet.core.loss import KlDiv
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
 from phasenet.utils.metrics import F1, Precision, Recall
@@ -55,11 +54,6 @@ class PhaseNetModel(pl.LightningModule):
         self.figs_val_store = []
         self.figs_test_store = []
 
-        # * loss
-        self.train_loss = KlDiv()
-        self.val_loss = KlDiv()
-        self.test_loss = KlDiv()
-
         # * metrics
         metrics_dict = OrderedDict()
         for stage in ["metrics_train", "metrics_val", "metrics_test"]:
@@ -81,14 +75,14 @@ class PhaseNetModel(pl.LightningModule):
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(
-            batch, batch_idx, "train")
+            batch)
         # * logging
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
-        log_content = {"loss_train": self.train_loss,
+        log_content = {"loss_train": loss,
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_train"]:
             for key in self.metrics["metrics_train"][phase]:
-                predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                predict_arrivals = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
                                                  self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
                 self.metrics["metrics_train"][phase][key](
                     predict_arrivals, batch["arrivals"])
@@ -100,12 +94,12 @@ class PhaseNetModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
-        loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "val")
-        log_content = {"loss_val": self.val_loss,
+        loss, sgram, predict = self._shared_eval_step(batch)
+        log_content = {"loss_val": loss,
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_val"]:
             for key in self.metrics["metrics_val"][phase]:
-                predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                predict_arrivals = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
                                                  self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
                 self.metrics["metrics_val"][phase][key](
                     predict_arrivals, batch["arrivals"])
@@ -116,12 +110,12 @@ class PhaseNetModel(pl.LightningModule):
         return loss
 
     def test_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
-        loss, sgram, predict = self._shared_eval_step(batch, batch_idx, "test")
+        loss, sgram, predict = self._shared_eval_step(batch)
         # * note we are logging loss but not self.test_loss, and manually compute/reset test metrics to add hyper parameters
         log_content = {"loss_test": loss}
         for phase in self.metrics["metrics_test"]:
             for key in self.metrics["metrics_test"][phase]:
-                predict_arrivals = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                predict_arrivals = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
                                                  self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
                 # use .update to avoid automatically call compute
                 # also note log Metrics with on_epoch will use Metrics' reduction, which is what we desire (not planning to mean all precision)
@@ -134,11 +128,10 @@ class PhaseNetModel(pl.LightningModule):
 
         return loss
 
-    def test_epoch_end(self, outputs: List[Dict]):
+    def test_epoch_end(self, outputs: List[torch.Tensor]):
         metrics = {
-            "Metrics/test_loss": self.test_loss.compute()
+            "Metrics/test_loss": torch.stack(outputs).mean()
         }
-        self.test_loss.reset()
         for phase in self.metrics["metrics_test"]:
             for key in self.metrics["metrics_test"][phase]:
                 metrics[f"Metrics/{phase}/{key}"] = self.metrics["metrics_test"][phase][key].compute()
@@ -146,19 +139,14 @@ class PhaseNetModel(pl.LightningModule):
         # actually not needed as only one epoch is presented
         self.log_hparms(metrics)
 
-    def _shared_eval_step(self, batch: Dict, batch_idx: int, stage: str) -> torch.Tensor:
+    def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
         wave, label = batch["data"], batch["label"]
         sgram = self.sgram_trans(wave)
         output = self.model(sgram)
         predict = output['predict']
-        if stage == "train":
-            loss = self.train_loss(predict, label)
-        elif stage == "val":
-            loss = self.val_loss(predict, label)
-        elif stage == "test":
-            loss = self.test_loss(predict, label)
-        else:
-            raise Exception(f"stage {stage} is not supported!")
+        loss = nn.functional.kl_div(
+            nn.functional.log_softmax(predict, dim=1), label, reduction='batchmean',
+        )
         return loss, sgram, predict
 
     def configure_optimizers(self):
@@ -232,9 +220,8 @@ class PhaseNetModel(pl.LightningModule):
                     example_this_batch = self.visualize_conf.example_num-finished_examples
                     last_step = True
 
-                predict_freq = torch.nn.functional.softmax(predict, dim=1)
                 figs = self.show_figs(
-                    batch, sgram, predict_freq, example_this_batch)
+                    batch, sgram, nn.functional.softmax(predict, dim=1), example_this_batch)
                 figs_store[stage].extend(figs)
                 if last_step:
                     tensorboard: SummaryWriter = self.logger.experiment
