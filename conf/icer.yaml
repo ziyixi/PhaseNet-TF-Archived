@@ -9,7 +9,7 @@ data:
   test_trans: ["scale", "label"]
 
 train:
-  epochs: 200
+  epochs: 160
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
@@ -17,6 +17,8 @@ train:
   use_a100: true
 
   distributed_devices: [0, 1, 2, 3]
+
+  run_type: hyper_tune
 
 visualize:
   log_val: true
@@ -28,7 +30,7 @@ visualize:
 
 hydra:
   job:
-    name: baseline
+    name: tune_data
   launcher:
     timeout_min: 120
     nodes: 1
@@ -36,3 +38,24 @@ hydra:
     cpus_per_task: 4
     mem_gb: 70
     gres: gpu:a100:4
+  sweeper:
+    sampler:
+      _target_: optuna.samplers.TPESampler
+      seed: 123
+      consider_prior: true
+      prior_weight: 1.0
+      consider_magic_clip: true
+      consider_endpoints: false
+      n_startup_trials: 10
+      n_ei_candidates: 24
+      multivariate: false
+      warn_independent_sampling: true
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+    direction: minimize
+    storage: null
+    study_name: tune_data
+    n_trials: 32
+    n_jobs: 4
+    params:
+      data.stack_ratio: interval(0.00, 1.00)
+      data.noise_replace_ratio: interval(0.00, 0.50)
