@@ -6,7 +6,7 @@ load configuration files for the project.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from hydra.conf import HydraConf, RunDir, JobConf
+from hydra.conf import HydraConf, JobConf, RunDir, SweepDir
 from hydra.core.config_store import ConfigStore
 from omegaconf import MISSING
 
@@ -196,6 +196,8 @@ class Hydra(HydraConf):
     run: RunDir = RunDir(
         dir="outputs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}")
     job: JobConf = JobConf(chdir=True)
+    sweep: SweepDir = SweepDir(
+        dir="outputs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}", subdir="${hydra.job.num}")
 
 
 @dataclass
