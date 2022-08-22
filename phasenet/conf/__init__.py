@@ -128,6 +128,8 @@ class TrainConfig:
     limit_test_batches: Optional[int] = None
     # * logging
     log_every_n_steps: int = 1
+    # * loss func
+    loss_func: str = "kl_div"
     # * when do seprate testing, load the ckpt path
     ckpt_path: Optional[str] = None
 
