@@ -17,7 +17,7 @@ train:
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
-  use_amp: true
+  use_amp: false
   use_a100: false
 
   distributed_devices: [0, 1, 2, 3]
@@ -36,12 +36,13 @@ hydra:
   job:
     name: tune_spectrogram
   launcher:
-    timeout_min: 120
+    timeout_min: 240
     nodes: 1
     tasks_per_node: 4
     cpus_per_task: 4
     mem_gb: 70
     gres: gpu:v100:4
+    account: cmse
   sweeper:
     sampler:
       _target_: optuna.samplers.TPESampler
