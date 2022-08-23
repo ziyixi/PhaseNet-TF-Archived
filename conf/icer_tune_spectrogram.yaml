@@ -1,0 +1,65 @@
+# @package _global_
+data:
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-all
+  train: tongaml_train.h5
+  test: tongaml_test.h5
+  val: tongaml_val.h5
+  train_trans: ["shift", "scale", "label"]
+  val_trans: ["scale", "label"]
+  test_trans: ["scale", "label"]
+
+  # tuned
+  stack_ratio: 0.97
+  noise_replace_ratio: 0.32
+
+train:
+  epochs: 160
+
+  accelerator: gpu
+  strategy: ddp_find_unused_parameters_false
+  use_amp: true
+  use_a100: false
+
+  distributed_devices: [0, 1, 2, 3]
+
+  run_type: hyper_tune
+
+visualize:
+  log_val: true
+  log_test: true
+  log_epoch: 30
+  sgram_threshold: 500
+  log_test_seprate_folder: false
+  log_test_seprate_folder_path: ""
+
+hydra:
+  job:
+    name: tune_spectrogram
+  launcher:
+    timeout_min: 120
+    nodes: 1
+    tasks_per_node: 4
+    cpus_per_task: 4
+    mem_gb: 70
+    gres: gpu:v100:4
+  sweeper:
+    sampler:
+      _target_: optuna.samplers.TPESampler
+      seed: 123
+      consider_prior: true
+      prior_weight: 1.0
+      consider_magic_clip: true
+      consider_endpoints: false
+      n_startup_trials: 10
+      n_ei_candidates: 24
+      multivariate: false
+      warn_independent_sampling: true
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+    direction: minimize
+    storage: null
+    study_name: tune_spectrogram
+    n_trials: 40
+    n_jobs: 4
+    params:
+      spectrogram.n_fft: choice(64,128,256)
+      spectrogram.max_clamp: range(50,10000,step=50)
