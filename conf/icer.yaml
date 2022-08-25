@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-all
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_updated_psfreq
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
@@ -8,8 +8,12 @@ data:
   val_trans: ["scale", "label"]
   test_trans: ["scale", "label"]
 
+  # tuned
+  stack_ratio: 0.9738217746076991
+  noise_replace_ratio: 0.3210340323794437
+
 train:
-  epochs: 160
+  epochs: 200
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
@@ -18,7 +22,7 @@ train:
 
   distributed_devices: [0, 1, 2, 3]
 
-  run_type: hyper_tune
+  run_type: train
 
 visualize:
   log_val: true
@@ -30,32 +34,12 @@ visualize:
 
 hydra:
   job:
-    name: tune_data
+    name: baseline
   launcher:
-    timeout_min: 120
+    timeout_min: 180
     nodes: 1
     tasks_per_node: 4
     cpus_per_task: 4
     mem_gb: 70
     gres: gpu:a100:4
-  sweeper:
-    sampler:
-      _target_: optuna.samplers.TPESampler
-      seed: 123
-      consider_prior: true
-      prior_weight: 1.0
-      consider_magic_clip: true
-      consider_endpoints: false
-      n_startup_trials: 10
-      n_ei_candidates: 24
-      multivariate: false
-      warn_independent_sampling: true
-    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
-    direction: minimize
-    storage: null
-    study_name: tune_data
-    n_trials: 40
-    n_jobs: 4
-    params:
-      data.stack_ratio: interval(0.00, 1.00)
-      data.noise_replace_ratio: interval(0.00, 0.50)
+    account: cmse
