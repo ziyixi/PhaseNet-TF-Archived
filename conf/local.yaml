@@ -19,19 +19,21 @@ train:
 
   loss_func: kl_div
 
+  ckpt_path: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/temp/epoch=143-loss_val=179.88.ckpt
+
 visualize:
   example_num: 5
 
   log_train: false
   log_val: false
-  log_test: false
+  log_test: true
 
   log_epoch: 2
   sgram_threshold: 500
 
-  log_test_seprate_folder: false
-  log_test_seprate_folder_path: ""
+  log_test_seprate_folder: true
+  log_test_seprate_folder_path: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/figs
 
 hydra:
   job:
-    name: test
+    name: test_fig
