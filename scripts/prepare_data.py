@@ -31,6 +31,7 @@ class TravelTimes:
     p: float = 0
     s: float = 0
     ps: float = 0
+    ps_freq: float = 0
     origin_time: str = ""
 
 
@@ -74,7 +75,7 @@ def load_csv(file_name: str) -> Tuple[DefaultDict[str, Event], DefaultDict[str, 
             raise Exception(
                 f"Multiple rows have same {event_key}/{station_key}")
         times_dict[event_station_key] = TravelTimes(
-            p=pd_row['PTIME'], s=pd_row['STIME'], ps=pd_row['PSTIME'], origin_time=pd_row['ORIGIN_TIME'])
+            p=pd_row['PTIME'], s=pd_row['STIME'], ps=pd_row['PSTIME'], ps_freq=pd_row['PS_FREQ'], origin_time=pd_row['ORIGIN_TIME'])
 
     return event_dict, inventory_dict, times_dict
 
@@ -142,6 +143,8 @@ def main(asdf_path: str, csv_path: str, sac_dir: str):
                 [times_dict[event_station_key].s]), data_type="TS", path=event_station_key, parameters={})
             ds.add_auxiliary_data(data=np.array(
                 [times_dict[event_station_key].ps]), data_type="TPS", path=event_station_key, parameters={})
+            ds.add_auxiliary_data(data=np.array(
+                [times_dict[event_station_key].ps_freq]), data_type="FPS", path=event_station_key, parameters={})
             # also the origin time, note here we need encode to put the string into hdf5
             ds.add_auxiliary_data(data=np.array([times_dict[event_station_key].origin_time.encode(
             )]), data_type="REFTIME", path=event_station_key, parameters={})
