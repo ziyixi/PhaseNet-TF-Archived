@@ -101,8 +101,8 @@ class VisualizeInfo:
                 freq_range = [10, 64]
                 ps_idx = peaks_idx[self.ps_idx][np.argmax(
                     peaks_val[self.ps_idx])]
-                ps_idx_start = ps_idx-int(2*self.sampling_rate)
-                ps_idx_end = ps_idx+int(5*self.sampling_rate)
+                ps_idx_start = ps_idx-int(1*self.sampling_rate)
+                ps_idx_end = ps_idx+int(3*self.sampling_rate)
                 if ps_idx_start < 0:
                     ps_idx_start = 0
                 if ps_idx_end > sgram.shape[-1]:
@@ -115,7 +115,6 @@ class VisualizeInfo:
                 fe = fe / \
                     sgram.shape[-2]*(self.freq_range[1] -
                                      self.freq_range[0])+self.freq_range[0]
-                print(key, fs, fe)
                 # plot
                 for iax in [1, 3, 5]:
                     axes[iax].hlines(y=fs, xmin=0,
@@ -159,7 +158,9 @@ class VisualizeInfo:
 
 def spectrogram_extract_max_freq(sgram_all_phases: torch.Tensor, y_start: int, y_end: int, x_range: List[int], x_length: int):
     # * given sgram, and y (time) indexes start and end, find x (freq) indexes start and end
-    sgram = sgram_all_phases.sum(axis=0)
+    # sgram = sgram_all_phases.sum(axis=0)
+    # we want to only consider the R component when finding PS
+    sgram = sgram_all_phases[0]
     themax = 0
     s, e = 0, 0
     for x_start in range(x_range[0], x_range[1]):

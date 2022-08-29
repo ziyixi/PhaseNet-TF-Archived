@@ -175,9 +175,9 @@ class PostProcessConfig:
         })  # the peaks must have possibility at
     sensitive_distances: Dict[str, float] = field(
         default_factory=lambda: {
-            "TP": 1.0,
-            "TS": 1.0,
-            "TPS": 1.0
+            "TP": 5.0,
+            "TS": 5.0,
+            "TPS": 5.0
         })  # when finding peaks, ignore close peaks in seconds
 
 
