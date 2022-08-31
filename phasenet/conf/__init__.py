@@ -179,12 +179,14 @@ class PostProcessConfig:
             "TS": 5.0,
             "TPS": 5.0
         })  # when finding peaks, ignore close peaks in seconds
+    # further analysis for test step
+    save_test_step_to_disk: bool = False
+    test_step_save_path: str = ""
 
 
 # * ======================================== * #
 # * main conf
 defaults = [
-    # Load the config "mysql" from the config group "db"
     {"data": "base_data"},
     {"spectrogram": "base_spectrogram"},
     {"model": "base_model"},
