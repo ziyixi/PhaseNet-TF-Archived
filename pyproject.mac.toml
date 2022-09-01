@@ -36,6 +36,9 @@ click = "^8.1.2"
 loguru = "^0.6.0"
 pandas = "^1.4.2"
 torch-tb-profiler = "^0.4.0"
+ipykernel = "^6.15.2"
+itables = "^1.2.0"
+seaborn = "^0.11.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
