@@ -3,22 +3,24 @@ visualize.py
 
 helper functions to visualzie the dataset and model.
 """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.pyplot import cm
+from obspy.core.trace import Trace
 
 
 class VisualizeInfo:
-    def __init__(self, phases: List[str], sampling_rate: int, x_range: List[int], freq_range: List[int], global_max: bool = False, sgram_threshold: Optional[int] = None) -> None:
+    def __init__(self, phases: List[str], sampling_rate: int, x_range: List[int], freq_range: List[int], global_max: bool = False, sgram_threshold: Optional[int] = None, plot_waveform_based_on: str = "all") -> None:
         self.phases = phases
         self.sampling_rate = sampling_rate
         self.x_range = x_range
         self.freq_range = freq_range
         self.global_max = global_max
         self.sgram_threshold = sgram_threshold
+        self.plot_waveform_based_on = plot_waveform_based_on
         self.ps_idx = None
         for iphase, phase in enumerate(self.phases):
             if phase == "TPS":
@@ -72,20 +74,14 @@ class VisualizeInfo:
                 #     print(torch.max(sgram[2][:, p_arrival+self.sampling_rate *
                 #                              5:p_arrival+self.sampling_rate*15]), "@@@@")
             max_scale = torch.max(torch.abs(data))
-            # * plot wave and sgram
+            # * plot sgram
             # R component
-            axes[0].plot(x, data[0, :], c="black", lw=1, label="R")
-            axes[0].legend()
             axes[1].imshow(sgram[0], aspect='auto', cmap="jet", origin='lower',
                            vmin=0, vmax=vmax[0], extent=self.x_range+self.freq_range)
             # T component
-            axes[2].plot(x, data[1, :], c="black", lw=1, label="T")
-            axes[2].legend()
             axes[3].imshow(sgram[1], aspect='auto', cmap="jet", origin='lower',
                            vmin=0, vmax=vmax[1], extent=self.x_range+self.freq_range)
             # Z component
-            axes[4].plot(x, data[2, :], c="black", lw=1, label="Z")
-            axes[4].legend()
             axes[5].imshow(sgram[2], aspect='auto', cmap="jet", origin='lower',
                            vmin=0, vmax=vmax[2], extent=self.x_range+self.freq_range)
             # * ps freq line (raw)
@@ -96,8 +92,9 @@ class VisualizeInfo:
             # * ps freq range line (predict)
             # * should plot max ps loc
             # * ps x range -2s +5s
+            fs, fe = None, None
             if self.ps_idx and len(peaks_idx[self.ps_idx]) > 0:
-                freq_win_length = 6
+                freq_win_length = 12
                 freq_range = [10, 64]
                 ps_idx = peaks_idx[self.ps_idx][np.argmax(
                     peaks_val[self.ps_idx])]
@@ -121,6 +118,30 @@ class VisualizeInfo:
                                      xmax=sgram.shape[-1]/self.sampling_rate, colors="w", ls='--', lw=1)
                     axes[iax].hlines(y=fe, xmin=0,
                                      xmax=sgram.shape[-1]/self.sampling_rate, colors="w", ls='--', lw=1)
+
+            # * plot wave
+            # put it here as we may need PS filter range
+            fig_label = {
+                "all": " (no further filtering)",
+                "P": " (0.2->5 HZ)",
+                "PS": " (dynamic based on PS)"
+            }
+
+            filtered, status = self.filter_waveform(
+                data[0, :], fs, fe)
+            axes[0].plot(x, filtered, c="black", lw=1,
+                         label="R"+fig_label[status])
+            axes[0].legend()
+            filtered, status = self.filter_waveform(
+                data[1, :], fs, fe)
+            axes[2].plot(x, filtered, c="black", lw=1,
+                         label="T"+fig_label[status])
+            axes[2].legend()
+            filtered, status = self.filter_waveform(
+                data[2, :], fs, fe)
+            axes[4].plot(x, filtered, c="black", lw=1,
+                         label="Z"+fig_label[status])
+            axes[4].legend()
 
             # * plot predictions and targets
             color = cm.rainbow(np.linspace(0, 1, len(self.phases)))
@@ -154,6 +175,28 @@ class VisualizeInfo:
 
             figs.append(fig)
         return figs
+
+    def filter_waveform(self, data: torch.Tensor, fs: Optional[float] = None, fe: Optional[float] = None) -> Tuple[torch.Tensor, str]:
+        if self.plot_waveform_based_on == "all":
+            return data, "all"
+
+        wave = Trace(data=data.numpy())
+        wave.stats.sampling_rate = self.sampling_rate
+        # filter based on the freq range info
+        # P 0.2 -> 5 HZ, PS: dynamic
+        if self.plot_waveform_based_on == "P":
+            wave.filter('bandpass', freqmin=0.2, freqmax=5,
+                        corners=4, zerophase=False)
+        elif self.plot_waveform_based_on == "PS":
+            if fs == None or fe == None:
+                # no fs/fe. no PS picks, return origional waveform
+                return data, "all"
+            else:
+                wave.filter('bandpass', freqmin=fs, freqmax=fe,
+                            corners=4, zerophase=False)
+        else:
+            raise Exception(f"no support for {self.plot_waveform_based_on=}")
+        return torch.tensor(wave.data), self.plot_waveform_based_on
 
 
 def spectrogram_extract_max_freq(sgram_all_phases: torch.Tensor, y_start: int, y_end: int, x_range: List[int], x_length: int):
