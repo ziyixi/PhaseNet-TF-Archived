@@ -19,6 +19,11 @@ class VisualizeInfo:
         self.freq_range = freq_range
         self.global_max = global_max
         self.sgram_threshold = sgram_threshold
+        self.ps_idx = None
+        for iphase, phase in enumerate(self.phases):
+            if phase == "TPS":
+                self.ps_idx = iphase
+                break
 
     def __call__(self, input_batch: Dict, sgram_batch: torch.Tensor,  predict_batch: torch.Tensor, peaks_batch: Dict[str, List[List[List]]], cur_example_num: int = 0) -> Optional[List[plt.Figure]]:
         if cur_example_num == 0:
@@ -83,6 +88,41 @@ class VisualizeInfo:
             axes[4].legend()
             axes[5].imshow(sgram[2], aspect='auto', cmap="jet", origin='lower',
                            vmin=0, vmax=vmax[2], extent=self.x_range+self.freq_range)
+            # * ps freq line (raw)
+            if "ps_freqs" in input_batch:
+                for iax in [1, 3, 5]:
+                    axes[iax].hlines(y=input_batch["ps_freqs"][ibatch], xmin=0,
+                                     xmax=sgram.shape[-1]/self.sampling_rate, colors="w", ls='-', lw=1)
+            # * ps freq range line (predict)
+            # * should plot max ps loc
+            # * ps x range -2s +5s
+            if self.ps_idx and len(peaks_idx[self.ps_idx]) > 0:
+                freq_win_length = 6
+                freq_range = [10, 64]
+                ps_idx = peaks_idx[self.ps_idx][np.argmax(
+                    peaks_val[self.ps_idx])]
+                ps_idx_start = ps_idx-int(2*self.sampling_rate)
+                ps_idx_end = ps_idx+int(5*self.sampling_rate)
+                if ps_idx_start < 0:
+                    ps_idx_start = 0
+                if ps_idx_end > sgram.shape[-1]:
+                    ps_idx_end = sgram.shape[-1]
+                fs, fe = spectrogram_extract_max_freq(
+                    sgram, ps_idx_start, ps_idx_end, freq_range, freq_win_length)
+                fs = fs / \
+                    sgram.shape[-2]*(self.freq_range[1] -
+                                     self.freq_range[0])+self.freq_range[0]
+                fe = fe / \
+                    sgram.shape[-2]*(self.freq_range[1] -
+                                     self.freq_range[0])+self.freq_range[0]
+                print(key, fs, fe)
+                # plot
+                for iax in [1, 3, 5]:
+                    axes[iax].hlines(y=fs, xmin=0,
+                                     xmax=sgram.shape[-1]/self.sampling_rate, colors="w", ls='--', lw=1)
+                    axes[iax].hlines(y=fe, xmin=0,
+                                     xmax=sgram.shape[-1]/self.sampling_rate, colors="w", ls='--', lw=1)
+
             # * plot predictions and targets
             color = cm.rainbow(np.linspace(0, 1, len(self.phases)))
             for i, each_phase in enumerate(self.phases):
@@ -115,3 +155,16 @@ class VisualizeInfo:
 
             figs.append(fig)
         return figs
+
+
+def spectrogram_extract_max_freq(sgram_all_phases: torch.Tensor, y_start: int, y_end: int, x_range: List[int], x_length: int):
+    # * given sgram, and y (time) indexes start and end, find x (freq) indexes start and end
+    sgram = sgram_all_phases.sum(axis=0)
+    themax = 0
+    s, e = 0, 0
+    for x_start in range(x_range[0], x_range[1]):
+        cur = sgram[x_start:x_start+x_length, y_start:y_end].sum()
+        if cur > themax:
+            s, e = x_start, x_start+x_length
+            themax = cur
+    return s, e
