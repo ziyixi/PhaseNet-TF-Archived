@@ -83,14 +83,16 @@ class PhaseNetModel(pl.LightningModule):
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_train"]:
             for key in self.metrics["metrics_train"][phase]:
-                predict_arrivals = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
-                                                 self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
+                peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                                      self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
+                predict_arrivals = peaks["arrivals"]
                 self.metrics["metrics_train"][phase][key](
                     predict_arrivals, batch["arrivals"])
                 log_content[f"Metrics/train/{phase}/{key}"] = self.metrics["metrics_train"][phase][key]
         self.log_dict(log_content,
                       on_step=False, on_epoch=True, batch_size=len(batch["data"]), sync_dist=True, prog_bar=True)
-        self._log_figs(batch, batch_idx, sgram, predict, "train")
+        self._log_figs(batch, batch_idx, sgram, predict,
+                       peaks, "train")
         # * return misfit
         return loss
 
@@ -100,14 +102,16 @@ class PhaseNetModel(pl.LightningModule):
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_val"]:
             for key in self.metrics["metrics_val"][phase]:
-                predict_arrivals = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
-                                                 self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
+                peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                                      self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
+                predict_arrivals = peaks["arrivals"]
                 self.metrics["metrics_val"][phase][key](
                     predict_arrivals, batch["arrivals"])
                 log_content[f"Metrics/val/{phase}/{key}"] = self.metrics["metrics_val"][phase][key]
         self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), sync_dist=True, prog_bar=True)
-        self._log_figs(batch, batch_idx, sgram, predict, "val")
+        self._log_figs(batch, batch_idx, sgram,
+                       predict, peaks, "val")
         return loss
 
     def test_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
@@ -116,8 +120,9 @@ class PhaseNetModel(pl.LightningModule):
         log_content = {"loss_test": loss}
         for phase in self.metrics["metrics_test"]:
             for key in self.metrics["metrics_test"][phase]:
-                predict_arrivals = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
-                                                 self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)["arrivals"]
+                peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                                      self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
+                predict_arrivals = peaks["arrivals"]
                 # use .update to avoid automatically call compute
                 # also note log Metrics with on_epoch will use Metrics' reduction, which is what we desire (not planning to mean all precision)
                 self.metrics["metrics_test"][phase][key].update(
@@ -125,7 +130,8 @@ class PhaseNetModel(pl.LightningModule):
                 log_content[f"Metrics/test/{phase}/{key}"] = self.metrics["metrics_test"][phase][key]
         self.log_dict(log_content, on_step=False,
                       on_epoch=True, batch_size=len(batch['data']), sync_dist=True)
-        self._log_figs(batch, batch_idx, sgram, predict, "test")
+        self._log_figs(batch, batch_idx, sgram, predict,
+                       peaks, "test")
 
         return loss
 
@@ -202,7 +208,7 @@ class PhaseNetModel(pl.LightningModule):
 
     # * ============== figure plotting ============== * #
     @rank_zero_only
-    def _log_figs(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor, stage: str) -> None:
+    def _log_figs(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor, peaks: Dict[str, List[List[List]]], stage: str) -> None:
         if_log = {
             "train": self.visualize_conf.log_train,
             "val": self.visualize_conf.log_val,
@@ -227,7 +233,7 @@ class PhaseNetModel(pl.LightningModule):
                     last_step = True
 
                 figs = self.show_figs(
-                    batch, sgram, nn.functional.softmax(predict, dim=1), example_this_batch)
+                    batch, sgram, nn.functional.softmax(predict, dim=1), peaks, example_this_batch)
                 figs_store[stage].extend(figs)
                 if last_step:
                     tensorboard: SummaryWriter = self.logger.experiment

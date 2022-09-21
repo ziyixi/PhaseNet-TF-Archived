@@ -20,7 +20,7 @@ class VisualizeInfo:
         self.global_max = global_max
         self.sgram_threshold = sgram_threshold
 
-    def __call__(self, input_batch: Dict, sgram_batch: torch.Tensor,  predict_batch: torch.Tensor, cur_example_num: int = 0) -> Optional[List[plt.Figure]]:
+    def __call__(self, input_batch: Dict, sgram_batch: torch.Tensor,  predict_batch: torch.Tensor, peaks_batch: Dict[str, List[List[List]]], cur_example_num: int = 0) -> Optional[List[plt.Figure]]:
         if cur_example_num == 0:
             return None
         figs = []
@@ -39,6 +39,7 @@ class VisualizeInfo:
             # generate figures for each ibatch
             data, arrivals, key, sgram, label, predict = data_batch[ibatch], arrivals_batch[
                 ibatch], key_batch[ibatch], sgram_batch[ibatch], label_batch[ibatch], predict_batch[ibatch]
+            peaks_idx, peaks_val = peaks_batch["arrivals"][ibatch], peaks_batch["amps"][ibatch]
             # here we assume the data has been procesed
             fig, axes = plt.subplots(8, 1, sharex=True, figsize=(
                 20, 34), gridspec_kw={'wspace': 0, 'hspace': 0})
@@ -100,6 +101,11 @@ class VisualizeInfo:
                         axes[idx].vlines(x=arrivals[i]/self.sampling_rate, ymin=self.freq_range[0],
                                          ymax=self.freq_range[1], colors=color[i], ls='--', lw=1)
                     axes[idx].set_ylabel('Frequency (HZ)', fontsize=18)
+                # * plot peaks
+                peaksx, peaksy = peaks_idx[i], peaks_val[i]
+                for px, py in zip(peaksx, peaksy):
+                    axes[7].scatter(px/self.sampling_rate, py,
+                                    s=50, color="k", marker="+")
             axes[6].plot(x, label[0, :].numpy(), '--',
                          c="black", label="Noise")
             axes[7].plot(x, predict[0, :].numpy(), '--',

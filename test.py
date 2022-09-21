@@ -22,7 +22,7 @@ warnings.filterwarnings(
     "ignore", ".*During `trainer.test()`, it is recommended to use `Trainer(devices=1)`*")
 
 
-@hydra.main(config_path="phasenet/conf", config_name="config", version_base="1.2")
+@hydra.main(config_path=".", config_name="base_config", version_base="1.2")
 def test_app(cfg: Config) -> None:
     train_conf = cfg.train
     # * current version
@@ -37,7 +37,8 @@ def test_app(cfg: Config) -> None:
         light_model = PhaseNetModel(UNet, cfg)
     else:
         raise Exception(f"model {cfg.model.nn_model} is not supported.")
-    light_data = WaveFormDataModule(cfg.data)
+    light_data = WaveFormDataModule(
+        data_conf=cfg.data, run_type=cfg.train.run_type)
     light_data.prepare_data()
 
     # * callbacks
