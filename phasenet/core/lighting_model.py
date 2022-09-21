@@ -50,6 +50,7 @@ class PhaseNetModel(pl.LightningModule):
             freq_range=[conf.spectrogram.freqmin, conf.spectrogram.freqmax],
             global_max=False,
             sgram_threshold=conf.visualize.sgram_threshold,
+            plot_waveform_based_on=conf.visualize.plot_waveform_based_on
         )
         self.figs_train_store = []
         self.figs_val_store = []

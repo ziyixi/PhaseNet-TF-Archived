@@ -156,6 +156,9 @@ class VisualizeConfig:
     # save test to seprate folder
     log_test_seprate_folder: bool = False
     log_test_seprate_folder_path: str = ""
+    # plot filtered waveform instead based on the PS/P arrival?
+    # can be all (filter based on data config), P (P max range/fixed range), S (S max range)
+    plot_waveform_based_on: str = "all"
 
 
 @dataclass
