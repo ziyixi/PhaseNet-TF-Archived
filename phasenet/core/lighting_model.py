@@ -130,9 +130,7 @@ class PhaseNetModel(pl.LightningModule):
         return loss
 
     def test_epoch_end(self, outputs: List[torch.Tensor]):
-        metrics = {
-            "Metrics/test_loss": torch.stack(outputs).mean()
-        }
+        metrics = {}
         for phase in self.metrics["metrics_test"]:
             for key in self.metrics["metrics_test"][phase]:
                 metrics[f"Metrics/{phase}/{key}"] = self.metrics["metrics_test"][phase][key].compute()
