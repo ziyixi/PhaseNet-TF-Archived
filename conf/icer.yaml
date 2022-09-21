@@ -22,3 +22,8 @@ visualize:
   sgram_threshold: 500
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
+
+
+hydra:
+  job:
+    name: test
