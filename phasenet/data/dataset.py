@@ -120,8 +120,13 @@ class WaveFormDataset(Dataset):
         noise_res = torch.zeros(
             3, int(sampling_rate*self.data_conf.win_length))
         components = ["R", "T", "Z"]
+        components_replace = ["E", "N", "Z"]
         for i in range(3):
-            trace = stream.select(component=components[i])[0]
+            trace = stream.select(component=components[i])
+            if len(trace) == 0:
+                trace = stream.select(component=components_replace[i])[0]
+            else:
+                trace = trace[0]
             if start < trace.stats.starttime or end > trace.stats.endtime or trace.stats.endtime-self.data_conf.win_length-10 < end:
                 # both signal and noise should be able to cut
                 raise Exception(

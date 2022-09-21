@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_updated_psfreq
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20220921
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
@@ -28,13 +28,13 @@ visualize:
   log_val: true
   log_test: true
   log_epoch: 30
-  sgram_threshold: 500
+  sgram_threshold: 500 
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
 
 hydra:
   job:
-    name: baseline
+    name: baseline_moredata
   launcher:
     timeout_min: 180
     nodes: 1
