@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset
+  data_dir: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dataset_updated_psfreq
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5

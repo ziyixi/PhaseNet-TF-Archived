@@ -50,6 +50,8 @@ class WaveFormDataset(Dataset):
         self.noise_data: Dict[str, torch.Tensor] = {}
         self.label: Dict[str, torch.Tensor] = {}
         self.wave_keys: List[str] = []
+        if self.data_conf.load_ps_freq:
+            self.ps_freqs: Dict[str, float] = {}
 
         if prepare:
             # load files and save to torch cache
@@ -75,6 +77,8 @@ class WaveFormDataset(Dataset):
         # * handle times
         # add label
         arrival_times: List[float] = []
+        if self.data_conf.load_ps_freq:
+            ps_freq = ds.auxiliary_data["FPS"][ak].data[:][0]
         for phase in self.data_conf.phases:
             arrival_times.append(ds.auxiliary_data[phase][ak].data[:][0])
         start = min(arrival_times)-self.data_conf.left_extend
@@ -169,6 +173,8 @@ class WaveFormDataset(Dataset):
         self.right_data[wk] = right_res
         self.noise_data[wk] = noise_res
         self.label[wk] = torch.tensor(arrival_times, dtype=torch.int)
+        if self.data_conf.load_ps_freq:
+            self.ps_freqs[wk] = ps_freq
 
     def __len__(self) -> int:
         return len(self.data)
@@ -184,6 +190,8 @@ class WaveFormDataset(Dataset):
             "arrivals": self.label[key],
             "key": key
         }
+        if self.data_conf.load_ps_freq:
+            sample["ps_freqs"] = self.ps_freqs[key]
         if self.transform:
             sample = self.transform(sample)
         if stack_main and self.stack_transform:
@@ -210,6 +218,8 @@ class WaveFormDataset(Dataset):
             "noise_data": self.noise_data,
             "label": self.label
         }
+        if self.data_conf.load_ps_freq:
+            tosave["ps_freqs"] = self.ps_freqs
         torch.save(tosave, file_name)
 
     def load(self, file_name: str) -> None:
@@ -221,3 +231,5 @@ class WaveFormDataset(Dataset):
         self.right_data: Dict[str, torch.Tensor] = toload['right_data']
         self.noise_data: Dict[str, torch.Tensor] = toload['noise_data']
         self.label: Dict[str, torch.Tensor] = toload['label']
+        if self.data_conf.load_ps_freq:
+            self.ps_freqs: Dict[str, float] = toload["ps_freqs"]

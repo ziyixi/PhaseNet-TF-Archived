@@ -64,6 +64,9 @@ class DataConfig:
     # * workers
     num_workers: int = 2
 
+    # * PS freq
+    load_ps_freq: bool = True
+
 
 @dataclass
 class SpectrogramConfig:
