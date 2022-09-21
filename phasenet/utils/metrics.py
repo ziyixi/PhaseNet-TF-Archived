@@ -34,6 +34,8 @@ class MetricBase(Metric):
                     matched = 1
                     break
             self.tp += matched  # true positive
+
+            # note the below line can automatically handle the nan (very small int) case
             self.t += 1 if 0 < real_arrival < self.time_point_length else 0  # true
             self.p += len(predict_arrival_list)  # positive
 

@@ -9,6 +9,7 @@ expected asdf file:
 from os.path import isfile, join
 from typing import Dict, List
 
+import numpy as np
 import torch
 from obspy import UTCDateTime
 from phasenet.conf import DataConfig
@@ -81,8 +82,9 @@ class WaveFormDataset(Dataset):
             ps_freq = ds.auxiliary_data["FPS"][ak].data[:][0]
         for phase in self.data_conf.phases:
             arrival_times.append(ds.auxiliary_data[phase][ak].data[:][0])
-        start = min(arrival_times)-self.data_conf.left_extend
-        end = min(arrival_times)+self.data_conf.right_extend
+        # here we use nan, as some arrivals might be nan <=> not existing in our dataset
+        start = np.nanmin(arrival_times)-self.data_conf.left_extend
+        end = np.nanmin(arrival_times)+self.data_conf.right_extend
         if start < 0:
             # smaller than start time, reset it to 0
             # as tetsed, we always have start<=tp<=ts<=end
@@ -166,7 +168,14 @@ class WaveFormDataset(Dataset):
             right_res[i, :] = right_wave_data[:right_res.shape[1]]
 
         # update arrivals to idx of points
-        arrival_times = [round(item*sampling_rate) for item in arrival_times]
+        arrival_times_new = []
+        for item in arrival_times:
+            if np.isnan(item):
+                # we use -900000000 to indicate nan, as here arrival_times has the meaning of indices
+                arrival_times_new.append(-900000000)
+            else:
+                arrival_times_new.append(round(item*sampling_rate))
+        arrival_times = arrival_times_new
 
         self.data[wk] = res
         self.left_data[wk] = left_res
