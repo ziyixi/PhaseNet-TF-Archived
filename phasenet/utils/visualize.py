@@ -91,7 +91,7 @@ class VisualizeInfo:
             # * ps freq line (raw)
             if "ps_freqs" in input_batch:
                 for iax in [1, 3, 5]:
-                    axes[iax].hlines(y=input_batch["ps_freqs"][ibatch], xmin=0,
+                    axes[iax].hlines(y=input_batch["ps_freqs"][ibatch].detach().cpu(), xmin=0,
                                      xmax=sgram.shape[-1]/self.sampling_rate, colors="w", ls='-', lw=1)
             # * ps freq range line (predict)
             # * should plot max ps loc
