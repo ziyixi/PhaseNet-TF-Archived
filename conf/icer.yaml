@@ -29,3 +29,9 @@ visualize:
 hydra:
   job:
     name: baseline
+  launcher:
+    timeout_min: 120
+    nodes: 1
+    cpus_per_task: 13
+    mem_gb: 70
+    gres: gpu:a100:4
