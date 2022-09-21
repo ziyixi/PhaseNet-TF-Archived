@@ -203,7 +203,8 @@ def spectrogram_extract_max_freq(sgram_all_phases: torch.Tensor, y_start: int, y
     # * given sgram, and y (time) indexes start and end, find x (freq) indexes start and end
     # sgram = sgram_all_phases.sum(axis=0)
     # we want to only consider the R component when finding PS
-    sgram = sgram_all_phases[0]
+    # 0:R, 1:T, 2:Z  Since we are looking at PS, we should use the horizontal component, so it should be some l2 mean
+    sgram = torch.sqrt(sgram_all_phases[0]**2+sgram_all_phases[1]**2)
     themax = 0
     s, e = 0, 0
     for x_start in range(x_range[0], x_range[1]):
