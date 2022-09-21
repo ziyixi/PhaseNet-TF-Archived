@@ -39,7 +39,8 @@ def train_app(cfg: Config) -> None:
         light_model = PhaseNetModel(UNet, cfg)
     else:
         raise Exception(f"model {cfg.model.nn_model} is not supported.")
-    light_data = WaveFormDataModule(cfg.data)
+    light_data = WaveFormDataModule(
+        data_conf=cfg.data, run_type=cfg.train.run_type)
     light_data.prepare_data()
 
     # * callbacks
@@ -87,7 +88,8 @@ def train_app(cfg: Config) -> None:
     # * test
 
     light_data.setup(stage="test")
-    trainer.test(datamodule=light_data, ckpt_path='best')
+    metrics = trainer.test(datamodule=light_data, ckpt_path='best')
+    return metrics[0]["loss_test"]
 
 
 if __name__ == "__main__":

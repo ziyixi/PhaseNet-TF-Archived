@@ -46,11 +46,11 @@ class DataConfig:
         "shift", "scale", "label"])
 
     stack: bool = True
-    stack_ratio: float = 0.6
+    stack_ratio: float = 0.6  # ! hyper tune
     min_stack_gap: int = 100
 
     replace_noise: bool = True
-    noise_replace_ratio: float = 0.05
+    noise_replace_ratio: float = 0.05  # ! hyper tune
 
     scale_at_end: bool = True
     scale_max_amp: float = 1.0
@@ -132,6 +132,8 @@ class TrainConfig:
     loss_func: str = "kl_div"
     # * when do seprate testing, load the ckpt path
     ckpt_path: Optional[str] = None
+    # * run_type, whether train or hyper_tune
+    run_type: str = "train"
 
 
 @dataclass

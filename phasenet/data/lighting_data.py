@@ -11,9 +11,10 @@ from .transforms import (GenLabel, RandomShift, ReplaceNoise, ScaleAmp,
 
 
 class WaveFormDataModule(pl.LightningDataModule):
-    def __init__(self, data_conf: DataConfig):
+    def __init__(self, data_conf: DataConfig, run_type: str):
         super().__init__()
         self.data_conf = data_conf
+        self.run_type = run_type
         self.trans = {
             "scale": ScaleAmp(data_conf),
             "shift": RandomShift(data_conf),
@@ -26,7 +27,8 @@ class WaveFormDataModule(pl.LightningDataModule):
         # cache
         WaveFormDataset(self.data_conf, data_type="train", prepare=True)
         WaveFormDataset(self.data_conf, data_type="val", prepare=True)
-        WaveFormDataset(self.data_conf, data_type="test", prepare=True)
+        if self.run_type != "hyper_tune":
+            WaveFormDataset(self.data_conf, data_type="test", prepare=True)
 
     def setup(self, stage: Optional[str] = None) -> None:
         if stage == "fit" or stage is None:
@@ -44,10 +46,16 @@ class WaveFormDataModule(pl.LightningDataModule):
                 self.data_conf, data_type="val", transform=transform_val)
 
         if stage == "test" or stage is None:
-            transform = Compose([self.trans[key]
-                                for key in self.data_conf.test_trans if key not in ["stack", "replace_noise"]])
-            self.wave_test = WaveFormDataset(
-                self.data_conf, data_type="test", transform=transform)
+            if self.run_type != "hyper_tune":
+                transform = Compose([self.trans[key]
+                                    for key in self.data_conf.test_trans if key not in ["stack", "replace_noise"]])
+                self.wave_test = WaveFormDataset(
+                    self.data_conf, data_type="test", transform=transform)
+            else:
+                transform = Compose([self.trans[key]
+                                    for key in self.data_conf.val_trans if key not in ["stack", "replace_noise"]])
+                self.wave_test = WaveFormDataset(
+                    self.data_conf, data_type="val", transform=transform)
 
     def train_dataloader(self):
         return DataLoader(self.wave_train, batch_size=self.data_conf.train_batch_size, shuffle=self.data_conf.train_shuffle, num_workers=self.data_conf.num_workers)
