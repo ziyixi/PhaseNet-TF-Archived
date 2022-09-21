@@ -55,7 +55,7 @@ def load_csv(file_name: str) -> Tuple[DefaultDict[str, Event], DefaultDict[str, 
         # events
         if event_key not in event_dict:
             origin = Origin(time=obspy.UTCDateTime(
-                pd_row['ORIGIN_TIME']), longitude=pd_row['ELON.'], latitude=pd_row['ELAT.'], depth=pd_row['EDEP.'])
+                pd_row['ORIGIN_TIME']), longitude=pd_row['ELON'], latitude=pd_row['ELAT'], depth=pd_row['EDEP'])
             event = Event(origins=[origin])
             event_dict[event_key] = event
         # stations
