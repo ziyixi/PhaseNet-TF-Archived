@@ -62,7 +62,8 @@ def load_csv(file_name: str) -> Tuple[DefaultDict[str, Event], DefaultDict[str, 
         if event_station_key in inventory_dict:
             raise Exception(
                 f"Multiple rows have same {event_key}/{station_key}")
-        station = Station(code=pd_row['STATION'])
+        station = Station(code=pd_row['STATION'],
+                          longitude=0, latitude=0, depth=0)
         # here we use event id as the network
         network = Network(code=event_key, stations=[station])
         inventory = Inventory(networks=[network])
