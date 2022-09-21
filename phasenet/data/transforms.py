@@ -111,8 +111,9 @@ class StackRand:
             'arrivals'],  random_sample['data'],  random_sample['label']
         # if arrivals overlap, skip
         for i in range(len(arrivals)):
-            if torch.abs(arrivals[i]-random_arrivals[i]) <= self.min_stack_gap:
-                return sample_updated
+            for j in range(len(random_arrivals)):
+                if torch.abs(arrivals[i]-random_arrivals[j]) <= self.min_stack_gap:
+                    return sample_updated
         # handle stacking
         stack_data = data+random_data
         stack_label = label+random_label

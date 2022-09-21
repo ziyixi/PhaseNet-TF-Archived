@@ -6,13 +6,14 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from phasenet.conf import Config
+from phasenet.core.loss import focal_loss
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
 from phasenet.utils.metrics import F1, Precision, Recall
+from phasenet.utils.peaks import extract_peaks
 from phasenet.utils.visualize import VisualizeInfo
 from pytorch_lightning.utilities import rank_zero_only
 from torch.utils.tensorboard import SummaryWriter
-from phasenet.utils.peaks import extract_peaks
 
 
 class PhaseNetModel(pl.LightningModule):
@@ -144,9 +145,14 @@ class PhaseNetModel(pl.LightningModule):
         sgram = self.sgram_trans(wave)
         output = self.model(sgram)
         predict = output['predict']
-        loss = nn.functional.kl_div(
-            nn.functional.log_softmax(predict, dim=1), label, reduction='batchmean',
-        )
+        if self.train_conf.loss_func == "kl_div":
+            loss = nn.functional.kl_div(
+                nn.functional.log_softmax(predict, dim=1), label, reduction='batchmean',
+            )
+        elif self.train_conf.loss_func == "focal":
+            loss = focal_loss(
+                nn.functional.softmax(predict, dim=1), label,
+            )
         return loss, sgram, predict
 
     def configure_optimizers(self):

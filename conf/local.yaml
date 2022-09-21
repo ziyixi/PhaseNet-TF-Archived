@@ -17,6 +17,8 @@ train:
   limit_val_batches: 4
   limit_test_batches: 4
 
+  loss_func: kl_div
+
 visualize:
   example_num: 5
 
