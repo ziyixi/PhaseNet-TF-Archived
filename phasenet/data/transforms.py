@@ -18,8 +18,9 @@ class RandomShift:
         data, arrivals = sample_updated["data"], sample_updated["arrivals"]
         left_data, right_data = sample_updated["left_data"], sample_updated["right_data"]
         # determine the shift range
-        left_bound = -torch.max(arrivals)
-        right_bound = self.width-torch.min(arrivals)
+        # we filter pos vals to avoid considering negative indices, i.e., nan
+        left_bound = -torch.max(arrivals[arrivals > 0])
+        right_bound = self.width-torch.min(arrivals[arrivals > 0])
         # update arrivals
         shift = torch.randint(left_bound, right_bound, (1,)).item()
         arrivals_shifted = arrivals.clone()
@@ -112,6 +113,9 @@ class StackRand:
         # if arrivals overlap, skip
         for i in range(len(arrivals)):
             for j in range(len(random_arrivals)):
+                # avoid nan
+                if arrivals[i] < -800000000 or random_arrivals[i] < -800000000:
+                    continue
                 if torch.abs(arrivals[i]-random_arrivals[j]) <= self.min_stack_gap:
                     return sample_updated
         # handle stacking
