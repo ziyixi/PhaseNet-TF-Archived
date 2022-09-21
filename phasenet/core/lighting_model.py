@@ -88,7 +88,7 @@ class PhaseNetModel(pl.LightningModule):
                     predict_arrivals, batch["arrivals"])
                 log_content[f"Metrics/train/{phase}/{key}"] = self.metrics["metrics_train"][phase][key]
         self.log_dict(log_content,
-                      on_step=False, on_epoch=True, batch_size=len(batch["data"]), sync_dist=True)
+                      on_step=False, on_epoch=True, batch_size=len(batch["data"]), sync_dist=True, prog_bar=True)
         self._log_figs(batch, batch_idx, sgram, predict, "train")
         # * return misfit
         return loss
@@ -105,7 +105,7 @@ class PhaseNetModel(pl.LightningModule):
                     predict_arrivals, batch["arrivals"])
                 log_content[f"Metrics/val/{phase}/{key}"] = self.metrics["metrics_val"][phase][key]
         self.log_dict(log_content, on_step=False,
-                      on_epoch=True, batch_size=len(batch['data']), sync_dist=True)
+                      on_epoch=True, batch_size=len(batch['data']), sync_dist=True, prog_bar=True)
         self._log_figs(batch, batch_idx, sgram, predict, "val")
         return loss
 
