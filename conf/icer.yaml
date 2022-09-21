@@ -54,7 +54,7 @@ hydra:
     direction: minimize
     storage: null
     study_name: tune_data
-    n_trials: 32
+    n_trials: 40
     n_jobs: 4
     params:
       data.stack_ratio: interval(0.00, 1.00)

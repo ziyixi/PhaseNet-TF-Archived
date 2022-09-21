@@ -188,6 +188,8 @@ class PhaseNetModel(pl.LightningModule):
 
     def log_hparms(self, metrics: Dict[str, torch.Tensor]):
         hparam = {
+            "data/stack_ratio": self.conf.data.stack_ratio,
+            "data/noise_replace_ratio": self.conf.data.noise_replace_ratio,
             "spectrogram/n_fft": self.conf.spectrogram.n_fft,
             "spectrogram/max_clamp": self.conf.spectrogram.max_clamp,
             "model/init_features": self.conf.model.init_features,
