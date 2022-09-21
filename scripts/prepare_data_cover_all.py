@@ -77,34 +77,57 @@ def load_csv(file_name: str) -> Tuple[DefaultDict[str, Event], DefaultDict[str, 
     return event_dict, inventory_dict, times_dict
 
 
-def get_sac_paths(root_path: str) -> DefaultDict[str, List[str]]:
+def get_sac_paths(sac_dir_ps: str, sac_dir_s: str, sac_dir_p: str) -> DefaultDict[str, List[str]]:
     """
     given the root path, get all sac files path, with the key as the connected EVENT_ID and STATION
     """
     res = defaultdict(list)
 
-    def data_path(x): return join(root_path, x)
-    sacs = glob(data_path("**/*sac"), recursive=True)
+    sacs1 = glob(join(sac_dir_ps, "**/*sac"), recursive=True)
+    sacs2 = glob(join(sac_dir_s, "**/*sac"), recursive=True)
+    sacs3 = glob(join(sac_dir_p, "**/*sac"), recursive=True)
 
-    for sac in sacs:
+    def check(current_check: str):
+        for key in res:
+            if len(res[key]) != 3:
+                raise Exception(
+                    f"{key} in the {current_check} directory contains {len(res[key])} files.")
+
+    for sac in sacs1:
         # here I do this as the key is a connected event and station
         key = sac.split("/")[-1].split(".")[0]
         res[key].append(sac)
+    check("PS")
+
+    for sac in sacs2:
+        key = sac.split("/")[-1].split(".")[0]
+        if len(res[key]) < 3:
+            res[key].append(sac)
+    check("S")
+
+    for sac in sacs3:
+        key = sac.split("/")[-1].split(".")[0]
+        if len(res[key]) < 3:
+            res[key].append(sac)
+    check("P")
+
     return res
 
 
 @click.command()
 @click.option("--asdf_path", help="output ASDF file path")
 @click.option("--csv_path", help="input csv file path")
-@click.option("--sac_dir", help="input sac directory")
-def main(asdf_path: str, csv_path: str, sac_dir: str):
+@click.option("--sac_dir_ps", help="input sac directory in PS dir")
+@click.option("--sac_dir_s", help="input sac directory in S dir")
+@click.option("--sac_dir_p", help="input sac directory in P dir")
+def main(asdf_path: str, csv_path: str, sac_dir_ps: str, sac_dir_s: str, sac_dir_p: str):
     """
     given the output asdf path, the data info csv file, and the sac files root (TongaML/PickedPS)
     generate the asdf file storing all the information for later use
     """
     # init
     event_dict, inventory_dict, times_dict = load_csv(csv_path)
-    sac_dict = get_sac_paths(sac_dir)
+    sac_dict = get_sac_paths(sac_dir_ps, sac_dir_s, sac_dir_p)
 
     # for all combinations of event_station, load the data
     with ASDFDataSet(asdf_path, mode="w") as ds:
