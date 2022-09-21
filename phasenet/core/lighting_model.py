@@ -132,6 +132,17 @@ class PhaseNetModel(pl.LightningModule):
                       on_epoch=True, batch_size=len(batch['data']), sync_dist=True)
         self._log_figs(batch, batch_idx, sgram, predict,
                        peaks, "test")
+        if self.conf.postprocess.save_test_step_to_disk:
+            self.save_test_steps(f"{batch_idx}.pt", {
+                "data": batch["data"],
+                "arrivals": batch["arrivals"],
+                "label": batch["label"],
+                "key": batch["key"],
+                "sgram": sgram,
+                "loss": loss,
+                "predict": predict,
+                "predict_arrivals": predict_arrivals
+            })
 
         return loss
 
@@ -205,6 +216,19 @@ class PhaseNetModel(pl.LightningModule):
             "train/weight_decay": self.conf.train.weight_decay,
         }
         self.logger.log_hyperparams(hparam, metrics)
+
+    def save_test_steps(self, file_name: str, to_save: Dict[str, torch.Tensor]) -> None:
+        # save tensors to disk for further analysis
+        file_path = join(self.conf.postprocess.test_step_save_path, file_name)
+        # update to_save to cpu array
+        to_save_cpu = {}
+        for key in to_save:
+            if isinstance(to_save[key], torch.Tensor):
+                to_save_cpu[key] = to_save[key].detach().to(
+                    dtype=torch.float32).cpu()
+            else:
+                to_save_cpu[key] = to_save[key]
+        torch.save(to_save_cpu, file_path)
 
     # * ============== figure plotting ============== * #
     @rank_zero_only

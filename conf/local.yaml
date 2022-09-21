@@ -34,6 +34,10 @@ visualize:
   log_test_seprate_folder: true
   log_test_seprate_folder_path: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/figs
 
+postprocess:
+  save_test_step_to_disk: true
+  test_step_save_path: /Users/ziyixi/Library/CloudStorage/OneDrive-MichiganStateUniversity/Packages_Research/PhaseNet-PyTorch/dump
+
 hydra:
   job:
     name: test_fig
