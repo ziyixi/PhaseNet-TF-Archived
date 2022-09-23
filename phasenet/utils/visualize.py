@@ -100,12 +100,14 @@ class VisualizeInfo:
                     peaks_val[self.ps_idx])]
                 ps_idx_start = ps_idx-int(1*self.sampling_rate)
                 ps_idx_end = ps_idx+int(3*self.sampling_rate)
+                noise_idx_start = ps_idx-int(5*self.sampling_rate)
+                noise_idx_end = ps_idx-int(1*self.sampling_rate)
                 if ps_idx_start < 0:
                     ps_idx_start = 0
                 if ps_idx_end > sgram.shape[-1]:
                     ps_idx_end = sgram.shape[-1]
-                fs, fe = spectrogram_extract_max_freq(
-                    sgram, ps_idx_start, ps_idx_end, freq_range, freq_win_length)
+                fs, fe = spectrogram_extract_ps_freq(
+                    sgram, ps_idx_start, ps_idx_end, freq_range, freq_win_length, noise_idx_start, noise_idx_end)
                 fs = fs / \
                     sgram.shape[-2]*(self.freq_range[1] -
                                      self.freq_range[0])+self.freq_range[0]
@@ -199,7 +201,7 @@ class VisualizeInfo:
         return torch.tensor(wave.data), self.plot_waveform_based_on
 
 
-def spectrogram_extract_max_freq(sgram_all_phases: torch.Tensor, y_start: int, y_end: int, x_range: List[int], x_length: int):
+def spectrogram_extract_ps_freq(sgram_all_phases: torch.Tensor, y_start: int, y_end: int, x_range: List[int], x_length: int, noise_idx_start: int, noise_idx_end: int):
     # * given sgram, and y (time) indexes start and end, find x (freq) indexes start and end
     # sgram = sgram_all_phases.sum(axis=0)
     # we want to only consider the R component when finding PS
@@ -210,6 +212,20 @@ def spectrogram_extract_max_freq(sgram_all_phases: torch.Tensor, y_start: int, y
     for x_start in range(x_range[0], x_range[1]):
         cur = sgram[x_start:x_start+x_length, y_start:y_end].sum()
         if cur > themax:
-            s, e = x_start, x_start+x_length
+            # s, e = x_start, x_start+x_length
             themax = cur
+    # now the range is s->e, value is the max
+    # we only consider the range max/10 -> max, but with best SNR
+    ratio_global = float("-inf")
+    for x_start in range(x_range[0], x_range[1]):
+        cur = sgram[x_start:x_start+x_length, y_start:y_end].sum()
+        noise = sgram[x_start:x_start+x_length,
+                      noise_idx_start:noise_idx_end].sum()
+        if cur >= themax/2:
+            cur_level = cur/(y_end-y_start)
+            noise_level = noise/(noise_idx_end-noise_idx_start)
+            ratio = cur_level/noise_level
+            if ratio > ratio_global:
+                ratio_global = ratio
+                s, e = x_start, x_start+x_length
     return s, e
