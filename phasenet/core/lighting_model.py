@@ -39,7 +39,8 @@ class PhaseNetModel(pl.LightningModule):
                 n_freq=self.model_conf.n_freq,
                 ksize_down=self.model_conf.encoder_conv_kernel_size,
                 ksize_up=self.model_conf.decoder_conv_kernel_size,
-                encoder_decoder_depth=self.model_conf.encoder_decoder_depth
+                encoder_decoder_depth=self.model_conf.encoder_decoder_depth,
+                calculate_skip_for_encoder=self.model_conf.train_with_spectrogram
             )
 
         # * figure logger
@@ -159,7 +160,11 @@ class PhaseNetModel(pl.LightningModule):
     def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
         wave, label = batch["data"], batch["label"]
         sgram = self.sgram_trans(wave)
-        output = self.model(sgram)
+        if self.model_conf.train_with_spectrogram:
+            output = self.model(sgram)
+        else:
+            wave_with_freq_dimension = wave[..., None, :]
+            output = self.model(wave_with_freq_dimension)
         predict = output['predict']
         if self.train_conf.loss_func == "kl_div":
             loss = nn.functional.kl_div(

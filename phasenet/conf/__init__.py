@@ -94,6 +94,7 @@ class ModelConfig:
     in_channels: int = 3
     out_channels: int = 4
     init_features: int = 32  # ! hyper tune
+    # n_freq is not used when train_with_spectrogram==False
     n_freq: int = 64  # should be the same as height in SpectrogramConfig
     first_layer_repeating_cnn: int = 3  # ! hyper tune
 
@@ -103,6 +104,9 @@ class ModelConfig:
         default_factory=lambda: [5, 5])  # ! hyper tune
 
     encoder_decoder_depth: int = 5  # ! hyper tune
+
+    # if False, train only use wave, should update other parameters by hand.
+    train_with_spectrogram: bool = True
 
 
 @dataclass
