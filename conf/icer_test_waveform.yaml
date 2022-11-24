@@ -15,38 +15,36 @@ data:
 model:
   train_with_spectrogram: false
   first_layer_repeating_cnn: 1
-  encoder_conv_kernel_size: [3, 1]
-  decoder_conv_kernel_size: [3, 1]
-  encoder_decoder_depth: 3
+  encoder_conv_kernel_size: [5, 1]
+  decoder_conv_kernel_size: [5, 1]
 
 train:
-  epochs: 160
+  epochs: 1
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
   use_amp: false
   use_a100: false
 
-  distributed_devices: [0, 1, 2, 3]
+  distributed_devices: [3]
 
-  run_type: train
+  run_type: test
+
+  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline_waveform/2022-09-29_15-57-57/0/lightning_logs/version_63403194/checkpoints/epoch=125-loss_val=179.23.ckpt"
 
 visualize:
   log_val: false
   log_test: false
   log_epoch: 30
-  sgram_threshold: 500
+  sgram_threshold: 500 
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
 
+postprocess:
+  metrics_dt_threshold: 0.5
+  save_test_step_to_disk: true
+  test_step_save_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dump/dump_phasenet1_cnn5_20221109
+
 hydra:
   job:
-    name: baseline_waveform_cnn3
-  launcher:
-    timeout_min: 120
-    nodes: 1
-    tasks_per_node: 4
-    cpus_per_task: 4
-    mem_gb: 70
-    gres: gpu:v100:4
-    account: cmse
+    name: test_run

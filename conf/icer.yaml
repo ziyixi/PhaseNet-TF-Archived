@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-error
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20220921
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
@@ -32,14 +32,14 @@ visualize:
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
 
-hydra:
-  job:
-    name: baseline_error
-  launcher:
-    timeout_min: 239
-    nodes: 1
-    tasks_per_node: 4
-    cpus_per_task: 4
-    mem_gb: 70
-    gres: gpu:a100:4
-    account: cmse
+# hydra:
+#   job:
+#     name: baseline_error
+#   launcher:
+#     timeout_min: 239
+#     nodes: 1
+#     tasks_per_node: 4
+#     cpus_per_task: 4
+#     mem_gb: 70
+#     gres: gpu:a100:4
+#     account: cmse

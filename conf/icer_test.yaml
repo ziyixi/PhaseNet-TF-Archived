@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-error
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20220921
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
@@ -20,11 +20,11 @@ train:
   use_amp: false
   use_a100: false
 
-  distributed_devices: [3]
+  distributed_devices: [1]
 
   run_type: test
 
-  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline_error/2022-09-22_21-44-36/0/lightning_logs/version_63214974/checkpoints/epoch=122-loss_val=189.48.ckpt"
+  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline_moredata/2022-09-22_11-12-46/0/lightning_logs/version_63191481/checkpoints/epoch=124-loss_val=175.10.ckpt"
 
 visualize:
   log_val: false
@@ -37,7 +37,7 @@ visualize:
 postprocess:
   metrics_dt_threshold: 0.5
   save_test_step_to_disk: true
-  test_step_save_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dump/dump_moredata_20220922_error
+  test_step_save_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dump/dump_phasenet2_20221109
 
 hydra:
   job:
