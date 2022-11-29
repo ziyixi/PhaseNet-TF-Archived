@@ -5,15 +5,17 @@ from typing import Dict, List
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+from pytorch_lightning.utilities import rank_zero_only
+from torch.utils.tensorboard import SummaryWriter
+
 from phasenet.conf import Config
 from phasenet.core.loss import focal_loss
 from phasenet.core.sgram import GenSgram
 from phasenet.model.unet import UNet
+from phasenet.utils.helper import Normalize
 from phasenet.utils.metrics import F1, Precision, Recall
 from phasenet.utils.peaks import extract_peaks
 from phasenet.utils.visualize import VisualizeInfo
-from pytorch_lightning.utilities import rank_zero_only
-from torch.utils.tensorboard import SummaryWriter
 
 
 class PhaseNetModel(pl.LightningModule):
@@ -59,7 +61,7 @@ class PhaseNetModel(pl.LightningModule):
 
         # * metrics
         metrics_dict = OrderedDict()
-        for stage in ["metrics_train", "metrics_val", "metrics_test"]:
+        for stage in ["metrics_val", "metrics_test"]:
             metrics_dict[stage] = OrderedDict()
             for iphase, phase in enumerate(conf.data.phases):
                 metrics_dict[stage][phase] = OrderedDict()
@@ -76,6 +78,10 @@ class PhaseNetModel(pl.LightningModule):
             metrics_dict[stage] = nn.ModuleDict(metrics_dict[stage])
         self.metrics = nn.ModuleDict(metrics_dict)
 
+        # * sgram normalizer
+        self.sgram_normalizer = Normalize(
+            self.spec_conf.mean, self.spec_conf.std)
+
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict = self._shared_eval_step(
             batch)
@@ -83,16 +89,11 @@ class PhaseNetModel(pl.LightningModule):
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
         log_content = {"loss_train": loss,
                        "step": self.current_epoch + 1.0}
-        for phase in self.metrics["metrics_train"]:
-            for key in self.metrics["metrics_train"][phase]:
-                peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
-                                      self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
-                predict_arrivals = peaks["arrivals"]
-                self.metrics["metrics_train"][phase][key](
-                    predict_arrivals, batch["arrivals"])
-                log_content[f"Metrics/train/{phase}/{key}"] = self.metrics["metrics_train"][phase][key]
         self.log_dict(log_content,
                       on_step=False, on_epoch=True, batch_size=len(batch["data"]), sync_dist=True, prog_bar=True)
+
+        peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                              self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
         self._log_figs(batch, batch_idx, sgram, predict,
                        peaks, "train")
         # * return misfit
@@ -159,7 +160,8 @@ class PhaseNetModel(pl.LightningModule):
 
     def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
         wave, label = batch["data"], batch["label"]
-        sgram = self.sgram_trans(wave)
+        sgram_raw = self.sgram_trans(wave)
+        sgram = self.sgram_normalizer(sgram_raw)
         if self.model_conf.train_with_spectrogram:
             output = self.model(sgram)
         else:
@@ -174,19 +176,24 @@ class PhaseNetModel(pl.LightningModule):
             loss = focal_loss(
                 nn.functional.softmax(predict, dim=1), label,
             )
-        return loss, sgram, predict
+        return loss, sgram_raw, predict
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
             self.parameters(), lr=self.train_conf.learning_rate, weight_decay=self.train_conf.weight_decay, amsgrad=False
         )
-        lr_scheduler = torch.optim.lr_scheduler.LinearLR(
-            optimizer, start_factor=1, end_factor=0.1, total_iters=self._num_training_steps)
+        # optimizer = torch.optim.SGD(
+        #     self.parameters(), lr=self.train_conf.learning_rate, momentum=0.9)
+        # lr_scheduler = torch.optim.lr_scheduler.LinearLR(
+        #     optimizer, start_factor=1, end_factor=0.1, total_iters=self._num_training_steps)
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=[30, 60, 90, 120], gamma=0.5
+        )
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": lr_scheduler,
-                "interval": "step"
+                "interval": "epoch"
             }
         }
 
@@ -280,3 +287,49 @@ class PhaseNetModel(pl.LightningModule):
                     tensorboard.add_figure(
                         tag, figs_store[stage], global_step=self.current_epoch+1)
                     figs_store[stage].clear()
+
+
+class MeanStdEstimator(pl.LightningModule):
+    def __init__(self, conf: Config) -> None:
+        super().__init__()
+        self.spec_conf = conf.spectrogram
+        self.sgram_trans = GenSgram(self.spec_conf)
+        self.dummy_layer = nn.BatchNorm2d(conf.model.in_channels)
+
+    def training_step(self, batch: Dict, batch_idx: int):
+        wave = batch["data"]
+        sgram = self.sgram_trans(wave)
+
+        mean = sgram.mean(dim=[0, 2, 3])
+        meansq = (sgram**2).mean(dim=[0, 2, 3])
+        return {
+            "loss": self.dummy_layer(sgram).mean(),
+            "mean": mean,
+            "meansq": meansq
+        }
+
+    def training_epoch_end(self, outputs: Dict[str, torch.tensor]) -> None:
+        mean = torch.stack([x["mean"] for x in outputs]).mean(dim=0)
+        meansq = torch.stack([x["meansq"] for x in outputs]).mean(dim=0)
+        std = torch.sqrt(meansq - mean**2)
+        if self.global_rank == 0:
+            print("="*10)
+            print(f"mean: {mean}")
+            print(f"std: {std}")
+            print("="*10)
+
+    def configure_optimizers(self):
+        # dummy one, not actually important
+        optimizer = torch.optim.AdamW(
+            self.parameters(), lr=0.01, weight_decay=0.001, amsgrad=False
+        )
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=[30, 60, 90, 120], gamma=0.5
+        )
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": lr_scheduler,
+                "interval": "epoch"
+            }
+        }

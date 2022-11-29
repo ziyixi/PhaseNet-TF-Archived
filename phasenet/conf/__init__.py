@@ -75,7 +75,7 @@ class SpectrogramConfig:
     """
     n_fft: int = 256  # ! hyper tune
     hop_length: int = 1
-    power: int = 2
+    power: Optional[int] = 2
     window_fn: str = "hann"
     freqmin: float = 0.
     freqmax: float = 10.
@@ -83,6 +83,11 @@ class SpectrogramConfig:
     height: int = 64
     width: int = 4800  # should equal to win_len*sampling_rate
     max_clamp: int = 3000  # ! hyper tune
+    # * normalize factors from train_estimate_mean_std.py
+    mean: List[float] = field(default_factory=lambda: [
+        130.9636, 136.6858,  97.8700])
+    std: List[float] = field(default_factory=lambda: [
+        362.7432, 374.5648, 296.8759])
 
 
 @dataclass
@@ -90,6 +95,7 @@ class ModelConfig:
     """
     neural network model configuration
     """
+    # can also be unet, deeplabv3+
     nn_model: str = "unet"
     in_channels: int = 3
     out_channels: int = 4
@@ -108,6 +114,19 @@ class ModelConfig:
     # if False, train only use wave, should update other parameters by hand.
     train_with_spectrogram: bool = True
 
+    # * below are deeplab configs, start with deeplab_
+    # check when nn_model == deeplab
+    deeplab_encoder_name: Optional[str] = "resnet34"
+    deeplab_encoder_depth: Optional[int] = 5
+    deeplab_encoder_weights: Optional[str] = None
+    deeplab_encoder_output_stride: Optional[int] = 16
+    deeplab_decoder_channels: Optional[int] = 256
+    deeplab_decoder_atrous_rates: List[int] = field(default_factory=lambda: [
+        12, 24, 36])
+    deeplab_in_channels: Optional[int] = 3
+    deeplab_classes: Optional[int] = 4
+    deplab_upsampling: Optional[int] = 4
+
 
 @dataclass
 class TrainConfig:
@@ -115,6 +134,7 @@ class TrainConfig:
     the trainning configuration
     """
     # * random seed
+    deterministic: bool = True
     use_random_seed: bool = True
     random_seed: int = 666
     # * basic configs
