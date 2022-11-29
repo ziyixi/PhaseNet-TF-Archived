@@ -24,6 +24,7 @@ class GenSgram(Spectrogram):
         self.height = spec_conf.height
         self.width = spec_conf.width
         self.max_clamp = spec_conf.max_clamp
+        self.power = spec_conf.power
 
     def __call__(self, waveform: torch.Tensor) -> torch.Tensor:
         sgram: torch.Tensor = super().__call__(waveform)
@@ -36,5 +37,15 @@ class GenSgram(Spectrogram):
         sgram = sgram[..., freqmin_pos:freqmax_pos+1, :-1]
         # resize
         sgram = F.resize(sgram, [self.height, self.width])
-        sgram = torch.clamp_max(sgram, self.max_clamp)
+        if self.power == 2:
+            sgram = torch.clamp_max(sgram, self.max_clamp)
+        elif self.power == None:
+            # first 3 channel as real, last 3 as imag
+            real = sgram.real
+            imag = sgram.imag
+            p = sgram.abs()**2+0.001
+            ratio = torch.clamp_max(p, self.max_clamp)/p
+            sgram = torch.cat([real*ratio, imag*ratio], dim=1)
+        else:
+            raise Exception(f"spec power {self.power} is not implemented yet!")
         return sgram

@@ -20,15 +20,19 @@ train:
   use_amp: false
   use_a100: false
 
-  distributed_devices: [0]
+  distributed_devices: [0, 1, 2, 3]
+  # distributed_devices: [0]
 
   run_type: train
 
   deterministic: false
+
+  step_lr_gamma: 0.6
   learning_rate: 0.001
 
 model:
   nn_model: deeplabv3+
+  deeplab_encoder_weights: imagenet
 
 spectrogram:
   mean: [130.9636, 136.6858,  97.8700]
@@ -44,12 +48,13 @@ visualize:
 
 hydra:
   job:
-    name: test_deeplab
-#   launcher:
-#     timeout_min: 239
-#     nodes: 1
-#     tasks_per_node: 4
-#     cpus_per_task: 4
-#     mem_gb: 70
-#     gres: gpu:a100:4
-#     account: cmse
+    # name: test_deeplab
+    name: baseline20221124
+  launcher:
+    timeout_min: 239
+    nodes: 1
+    tasks_per_node: 4
+    cpus_per_task: 4
+    mem_gb: 100
+    gres: gpu:v100:4
+    account: cmse

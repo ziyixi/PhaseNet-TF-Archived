@@ -21,8 +21,8 @@ def create_smp_model(model_conf: ModelConfig) -> nn.Module:
             decoder_channels=model_conf.deeplab_decoder_channels,
             decoder_atrous_rates=tuple(
                 model_conf.deeplab_decoder_atrous_rates),
-            in_channels=model_conf.deeplab_in_channels,
-            classes=model_conf.deeplab_classes,
+            in_channels=model_conf.in_channels,
+            classes=model_conf.out_channels,
             upsampling=model_conf.deplab_upsampling
         )
     else:

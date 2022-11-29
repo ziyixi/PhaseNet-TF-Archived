@@ -123,8 +123,6 @@ class ModelConfig:
     deeplab_decoder_channels: Optional[int] = 256
     deeplab_decoder_atrous_rates: List[int] = field(default_factory=lambda: [
         12, 24, 36])
-    deeplab_in_channels: Optional[int] = 3
-    deeplab_classes: Optional[int] = 4
     deplab_upsampling: Optional[int] = 4
 
 
@@ -161,6 +159,11 @@ class TrainConfig:
     ckpt_path: Optional[str] = None
     # * run_type, whether train or hyper_tune
     run_type: str = "train"
+
+    # * optimizer
+    step_lr_milestones: List[int] = field(
+        default_factory=lambda: [30, 60, 90, 120])
+    step_lr_gamma: float = 0.5
 
 
 @dataclass

@@ -44,6 +44,8 @@ class PhaseNetModel(pl.LightningModule):
                 encoder_decoder_depth=self.model_conf.encoder_decoder_depth,
                 calculate_skip_for_encoder=self.model_conf.train_with_spectrogram
             )
+        else:
+            self.model = model()
 
         # * figure logger
         self.show_figs = VisualizeInfo(
@@ -176,6 +178,12 @@ class PhaseNetModel(pl.LightningModule):
             loss = focal_loss(
                 nn.functional.softmax(predict, dim=1), label,
             )
+        # sgram_raw should only be for logging
+        if self.spec_conf.power == None:
+            # convert to power
+            real = sgram_raw[:, :3, :, :]
+            imag = sgram_raw[:, 3:, :, :]
+            sgram_raw = real**2+imag**2
         return loss, sgram_raw, predict
 
     def configure_optimizers(self):
@@ -187,7 +195,7 @@ class PhaseNetModel(pl.LightningModule):
         # lr_scheduler = torch.optim.lr_scheduler.LinearLR(
         #     optimizer, start_factor=1, end_factor=0.1, total_iters=self._num_training_steps)
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[30, 60, 90, 120], gamma=0.5
+            optimizer, milestones=self.train_conf.step_lr_milestones, gamma=self.train_conf.step_lr_gamma
         )
         return {
             "optimizer": optimizer,
