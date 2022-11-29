@@ -21,7 +21,7 @@ train:
   use_a100: false
 
   distributed_devices: [0, 1, 2, 3]
-  # distributed_devices: [0]
+  # distributed_devices: [0,1,2]
 
   run_type: train
 
@@ -32,11 +32,14 @@ train:
 
 model:
   nn_model: deeplabv3+
-  deeplab_encoder_weights: imagenet
+  in_channels: 6
 
 spectrogram:
-  mean: [130.9636, 136.6858,  97.8700]
-  std: [362.7432, 374.5648, 296.8759]
+  # mean: [130.9636, 136.6858,  97.8700]
+  # std: [362.7432, 374.5648, 296.8759]
+  mean: [ 2.2663e-06,  4.6748e-06, -8.1938e-06, -2.6783e-05,  1.3381e-05, 6.1216e-06]
+  std: [5.3443, 5.4437, 4.6404, 5.3411, 5.4404, 4.6374]
+  power: null
 
 visualize:
   log_val: false

@@ -35,9 +35,8 @@ class GenSgram(Spectrogram):
         freqmin_pos = round(self.freqmin/df)
         freqmax_pos = round(self.freqmax/df)
         sgram = sgram[..., freqmin_pos:freqmax_pos+1, :-1]
-        # resize
-        sgram = F.resize(sgram, [self.height, self.width])
         if self.power == 2:
+            sgram = F.resize(sgram, [self.height, self.width])
             sgram = torch.clamp_max(sgram, self.max_clamp)
         elif self.power == None:
             # first 3 channel as real, last 3 as imag
@@ -46,6 +45,8 @@ class GenSgram(Spectrogram):
             p = sgram.abs()**2+0.001
             ratio = torch.clamp_max(p, self.max_clamp)/p
             sgram = torch.cat([real*ratio, imag*ratio], dim=1)
+            # resize seems not keeping imag
+            sgram = F.resize(sgram, [self.height, self.width])
         else:
             raise Exception(f"spec power {self.power} is not implemented yet!")
         return sgram
