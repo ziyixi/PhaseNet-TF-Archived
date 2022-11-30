@@ -8,6 +8,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelSummary
 from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
 from phasenet.data.lighting_data import WaveFormDataModule
+from phasenet.model.segmentation_models import create_smp_model
 from phasenet.model.unet import UNet
 from phasenet.utils.helper import get_git_revision_short_hash
 
@@ -36,7 +37,8 @@ def test_app(cfg: Config) -> None:
     if cfg.model.nn_model == "unet":
         light_model = PhaseNetModel(UNet, cfg)
     else:
-        raise Exception(f"model {cfg.model.nn_model} is not supported.")
+        SegModel = create_smp_model(model_conf=cfg.model)
+        light_model = PhaseNetModel(SegModel, cfg)
     light_data = WaveFormDataModule(
         data_conf=cfg.data, run_type=cfg.train.run_type)
     light_data.prepare_data()
@@ -58,7 +60,7 @@ def test_app(cfg: Config) -> None:
     trainer = Trainer(
         callbacks=callbacks,
         accelerator=train_conf.accelerator,
-        deterministic=train_conf.use_random_seed,
+        deterministic=train_conf.deterministic,
         devices=(
             train_conf.distributed_devices if train_conf.accelerator == "gpu" else None),
         precision=precision,

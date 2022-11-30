@@ -20,12 +20,24 @@ train:
   use_amp: false
   use_a100: false
 
-  distributed_devices: [0]
+  distributed_devices: [1]
 
   run_type: test
+  
+  deterministic: false
 
-  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline20221124/2022-11-28_21-59-09/0/lightning_logs/version_65914268/checkpoints/epoch=98-loss_val=169.10.ckpt"
+  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline20221124/2022-11-29_10-24-13/0/lightning_logs/version_65928006/checkpoints/epoch=65-loss_val=143.55.ckpt"
+model:
+  nn_model: deeplabv3+
+  in_channels: 6
 
+spectrogram:
+  # mean: [130.9636, 136.6858,  97.8700]
+  # std: [362.7432, 374.5648, 296.8759]
+  mean: [ 2.2663e-06,  4.6748e-06, -8.1938e-06, -2.6783e-05,  1.3381e-05, 6.1216e-06]
+  std: [5.3443, 5.4437, 4.6404, 5.3411, 5.4404, 4.6374]
+  power: null
+  
 visualize:
   log_val: false
   log_test: false
@@ -35,7 +47,7 @@ visualize:
   log_test_seprate_folder_path: ""
 
 postprocess:
-  metrics_dt_threshold: 0.5
+  metrics_dt_threshold: 0.1
   save_test_step_to_disk: false
   test_step_save_path: ""
 

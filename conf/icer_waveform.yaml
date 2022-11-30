@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20220921
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20221124
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
@@ -15,17 +15,17 @@ data:
 model:
   train_with_spectrogram: false
   first_layer_repeating_cnn: 1
-  encoder_conv_kernel_size: [3, 1]
-  decoder_conv_kernel_size: [3, 1]
-  encoder_decoder_depth: 3
+  encoder_conv_kernel_size: [7, 1]
+  decoder_conv_kernel_size: [7, 1]
+  encoder_decoder_depth: 5
 
 train:
   epochs: 160
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
-  use_amp: false
-  use_a100: false
+  use_amp: true
+  use_a100: true
 
   distributed_devices: [0, 1, 2, 3]
 
@@ -41,12 +41,12 @@ visualize:
 
 hydra:
   job:
-    name: baseline_waveform_cnn3
+    name: baseline20221124
   launcher:
-    timeout_min: 120
+    timeout_min: 239
     nodes: 1
     tasks_per_node: 4
     cpus_per_task: 4
     mem_gb: 70
-    gres: gpu:v100:4
+    gres: gpu:a100:4
     account: cmse
