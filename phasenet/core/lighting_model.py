@@ -85,7 +85,7 @@ class PhaseNetModel(pl.LightningModule):
             self.spec_conf.mean, self.spec_conf.std)
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
-        loss, sgram, predict = self._shared_eval_step(
+        loss, sgram, predict, _ = self._shared_eval_step(
             batch)
         # * logging
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
@@ -102,7 +102,7 @@ class PhaseNetModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
-        loss, sgram, predict = self._shared_eval_step(batch)
+        loss, sgram, predict, _ = self._shared_eval_step(batch)
         log_content = {"loss_val": loss,
                        "step": self.current_epoch + 1.0}
         for phase in self.metrics["metrics_val"]:
@@ -120,7 +120,7 @@ class PhaseNetModel(pl.LightningModule):
         return loss
 
     def test_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
-        loss, sgram, predict = self._shared_eval_step(batch)
+        loss, sgram, predict, segout = self._shared_eval_step(batch)
         # * note we are logging loss but not self.test_loss, and manually compute/reset test metrics to add hyper parameters
         log_content = {"loss_test": loss}
         for phase in self.metrics["metrics_test"]:
@@ -138,7 +138,7 @@ class PhaseNetModel(pl.LightningModule):
         self._log_figs(batch, batch_idx, sgram, predict,
                        peaks, "test")
         if self.conf.postprocess.save_test_step_to_disk:
-            self.save_test_steps(f"{batch_idx}.pt", {
+            tosave = {
                 "data": batch["data"],
                 "arrivals": batch["arrivals"],
                 "label": batch["label"],
@@ -146,8 +146,11 @@ class PhaseNetModel(pl.LightningModule):
                 "sgram": sgram,
                 "loss": loss,
                 "predict": predict,
-                "predict_arrivals": predict_arrivals
-            })
+                "predict_arrivals": predict_arrivals,
+            }
+            if segout != None:
+                tosave["segout"] = segout
+            self.save_test_steps(f"{batch_idx}.pt", tosave)
 
         return loss
 
@@ -184,7 +187,9 @@ class PhaseNetModel(pl.LightningModule):
             real = sgram_raw[:, :3, :, :]
             imag = sgram_raw[:, 3:, :, :]
             sgram_raw = real**2+imag**2
-        return loss, sgram_raw, predict
+
+        segout = output["segout"] if ("segout" in output) else None
+        return loss, sgram_raw, predict, segout
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(

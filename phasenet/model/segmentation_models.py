@@ -39,8 +39,10 @@ def create_smp_model(model_conf: ModelConfig) -> nn.Module:
             self.fc2 = nn.Linear(model_conf.n_freq//2, 1)
 
         def forward(self, x: torch.Tensor):
+            result = {}
             # x = self.bn(x)
             x = F.relu(self.image_model(x))
+            result["segout"] = x.clone()
             # transpose to have the last axis as freq, as Linear required
             x = x.transpose(-1, -2)
             x = F.relu(self.fc1(x))
@@ -48,7 +50,6 @@ def create_smp_model(model_conf: ModelConfig) -> nn.Module:
             x = x.squeeze(-1)
 
             # * prepare result
-            result = {}
             result["predict"] = x
             return result
 

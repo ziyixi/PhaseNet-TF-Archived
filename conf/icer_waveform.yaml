@@ -17,7 +17,7 @@ model:
   first_layer_repeating_cnn: 1
   encoder_conv_kernel_size: [7, 1]
   decoder_conv_kernel_size: [7, 1]
-  encoder_decoder_depth: 5
+  encoder_decoder_depth: 4
 
 train:
   epochs: 160
@@ -43,7 +43,7 @@ hydra:
   job:
     name: baseline20221124
   launcher:
-    timeout_min: 239
+    timeout_min: 120
     nodes: 1
     tasks_per_node: 4
     cpus_per_task: 4

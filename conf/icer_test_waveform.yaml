@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20220921
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20221124
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
@@ -15,8 +15,9 @@ data:
 model:
   train_with_spectrogram: false
   first_layer_repeating_cnn: 1
-  encoder_conv_kernel_size: [5, 1]
-  decoder_conv_kernel_size: [5, 1]
+  encoder_conv_kernel_size: [7, 1]
+  decoder_conv_kernel_size: [7, 1]
+  encoder_decoder_depth: 4
 
 train:
   epochs: 1
@@ -26,11 +27,11 @@ train:
   use_amp: false
   use_a100: false
 
-  distributed_devices: [3]
+  distributed_devices: [1]
 
   run_type: test
 
-  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline_waveform/2022-09-29_15-57-57/0/lightning_logs/version_63403194/checkpoints/epoch=125-loss_val=179.23.ckpt"
+  ckpt_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline20221124/2022-11-30_12-30-20/0/lightning_logs/version_65971979/checkpoints/epoch=149-loss_val=192.78.ckpt"
 
 visualize:
   log_val: false
@@ -43,7 +44,7 @@ visualize:
 postprocess:
   metrics_dt_threshold: 0.5
   save_test_step_to_disk: true
-  test_step_save_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dump/dump_phasenet1_cnn5_20221109
+  test_step_save_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dump/dump_20221130/phasenet_retrain
 
 hydra:
   job:

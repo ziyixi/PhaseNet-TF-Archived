@@ -47,9 +47,9 @@ visualize:
   log_test_seprate_folder_path: ""
 
 postprocess:
-  metrics_dt_threshold: 0.1
+  metrics_dt_threshold: 0.5
   save_test_step_to_disk: false
-  test_step_save_path: ""
+  test_step_save_path: "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dump/dump_20221130/deeplabv3p"
 
 hydra:
   job:
