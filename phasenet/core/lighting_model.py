@@ -5,8 +5,8 @@ from typing import Dict, List
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+import wandb
 from pytorch_lightning.utilities import rank_zero_only
-from torch.utils.tensorboard import SummaryWriter
 
 from phasenet.conf import Config
 from phasenet.core.loss import focal_loss
@@ -286,19 +286,16 @@ class PhaseNetModel(pl.LightningModule):
                     batch, sgram, nn.functional.softmax(predict, dim=1), peaks, example_this_batch)
                 figs_store[stage].extend(figs)
                 if last_step:
-                    tensorboard: SummaryWriter = self.logger.experiment
-                    # tag name
-                    if self.current_epoch == self.trainer.max_epochs-1 or stage == "test":
-                        tag = f"{stage}/final"
-                    elif self.visualize_conf.log_epoch and (self.current_epoch+1) % self.visualize_conf.log_epoch == 0:
-                        tag = f"{stage}/epoch{self.current_epoch+1}"
                     # save figures in dir when asked in the test stage
                     if self.visualize_conf.log_test_seprate_folder and stage == "test":
                         for idx, each_fig in enumerate(self.figs_test_store):
                             each_fig.savefig(
                                 join(self.visualize_conf.log_test_seprate_folder_path, f"{idx+1}.pdf"))
-                    tensorboard.add_figure(
-                        tag, figs_store[stage], global_step=self.current_epoch+1)
+                    # tensorboard.add_figure(
+                    #     tag, figs_store[stage], global_step=self.current_epoch+1)
+                    wandb.log({
+                        f"figs_{stage}": figs_store[stage]
+                    })
                     figs_store[stage].clear()
 
 

@@ -27,6 +27,7 @@ scipy = "^1.9.0"
 hydra-submitit-launcher = "^1.2.0"
 hydra-optuna-sweeper = "^1.2.0"
 segmentation-models-pytorch = "^0.3.2"
+wandb = "^0.13.9"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.13.7"
