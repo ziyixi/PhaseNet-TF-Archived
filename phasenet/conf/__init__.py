@@ -64,7 +64,7 @@ class DataConfig:
     # * workers
     num_workers: int = 2
 
-    # * PS freq
+    # * PS freq picked by Fan, used for visualizing
     load_ps_freq: bool = True
 
 
