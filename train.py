@@ -5,6 +5,7 @@ import hydra
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import (EarlyStopping, LearningRateMonitor,
                                          ModelCheckpoint, ModelSummary)
+from pytorch_lightning.loggers import WandbLogger
 
 from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
@@ -62,6 +63,9 @@ def train_app(cfg: Config) -> None:
         else:
             precision = 16
 
+    # * wandb logger
+    wandb_logger = WandbLogger(project="MNIST", log_model="all")
+
     trainer = Trainer(
         callbacks=callbacks,
         accelerator=train_conf.accelerator,
@@ -81,6 +85,7 @@ def train_app(cfg: Config) -> None:
         log_every_n_steps=train_conf.log_every_n_steps,
         sync_batchnorm=train_conf.sync_batchnorm,
         num_sanity_val_steps=0,  # no need to do this check outside development
+        logger=wandb_logger
     )
 
     # * train and val
