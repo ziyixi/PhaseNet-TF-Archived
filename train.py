@@ -65,7 +65,7 @@ def train_app(cfg: Config) -> None:
 
     # * wandb logger
     wandb_logger = WandbLogger(
-        name=cfg.wandb.job_name, project=cfg.wandb.project_name, log_model="all")
+        name=cfg.wandb.job_name, project=cfg.wandb.project_name, log_model=True)
     wandb_logger.watch(light_model, log="all",
                        log_freq=cfg.wandb.model_log_freq)
 
