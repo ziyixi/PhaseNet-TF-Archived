@@ -42,17 +42,22 @@ spectrogram:
   power: null
 
 visualize:
-  log_val: false
-  log_test: false
+  log_val: true
+  log_test: true
   log_epoch: 30
   sgram_threshold: 500 
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
 
+wandb:
+  job_name: baseline
+  project_name: PhaseNet-TF
+  model_log_freq: 2000
+
 hydra:
   job:
-    # name: test_deeplab
-    name: baseline20221124
+    # name: test
+    name: baseline
   launcher:
     timeout_min: 239
     nodes: 1

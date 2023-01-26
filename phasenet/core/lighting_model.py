@@ -2,6 +2,7 @@ from collections import OrderedDict
 from os.path import join
 from typing import Dict, List
 
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -89,8 +90,7 @@ class PhaseNetModel(pl.LightningModule):
             batch)
         # * logging
         # refer to https://github.com/PyTorchLightning/pytorch-lightning/issues/10349
-        log_content = {"loss_train": loss,
-                       "step": self.current_epoch + 1.0}
+        log_content = {"loss_train": loss}
         self.log_dict(log_content,
                       on_step=False, on_epoch=True, batch_size=len(batch["data"]), sync_dist=True, prog_bar=True)
 
@@ -103,8 +103,7 @@ class PhaseNetModel(pl.LightningModule):
 
     def validation_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict, _ = self._shared_eval_step(batch)
-        log_content = {"loss_val": loss,
-                       "step": self.current_epoch + 1.0}
+        log_content = {"loss_val": loss}
         for phase in self.metrics["metrics_val"]:
             for key in self.metrics["metrics_val"][phase]:
                 peaks = extract_peaks(nn.functional.softmax(predict, dim=1), self.conf.data.phases, self.conf.postprocess.sensitive_heights,
@@ -241,7 +240,9 @@ class PhaseNetModel(pl.LightningModule):
             "train/learning_rate": self.conf.train.learning_rate,
             "train/weight_decay": self.conf.train.weight_decay,
         }
-        self.logger.log_hyperparams(hparam, metrics)
+        if self.global_rank == 0:
+            self.logger.experiment.config.update(hparam)
+            self.logger.experiment.config.update(metrics)
 
     def save_test_steps(self, file_name: str, to_save: Dict[str, torch.Tensor]) -> None:
         # save tensors to disk for further analysis
@@ -291,11 +292,11 @@ class PhaseNetModel(pl.LightningModule):
                         for idx, each_fig in enumerate(self.figs_test_store):
                             each_fig.savefig(
                                 join(self.visualize_conf.log_test_seprate_folder_path, f"{idx+1}.pdf"))
-                    # tensorboard.add_figure(
-                    #     tag, figs_store[stage], global_step=self.current_epoch+1)
-                    wandb.log({
-                        f"figs_{stage}": figs_store[stage]
+                    self.logger.experiment.log({
+                        f"figs_{stage}": [wandb.Image(item) for item in figs_store[stage]]
                     })
+                    for each in figs_store[stage]:
+                        plt.close(each)
                     figs_store[stage].clear()
 
 

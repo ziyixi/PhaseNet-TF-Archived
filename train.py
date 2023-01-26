@@ -51,7 +51,7 @@ def train_app(cfg: Config) -> None:
         logging_interval='epoch'))
     callbacks.append(ModelSummary(max_depth=2))
     callbacks.append(ModelCheckpoint(
-        save_top_k=3, monitor="loss_val", mode="min", filename="{epoch:02d}-{loss_val:.2f}"))
+        save_top_k=1, monitor="loss_val", mode="min", filename="{epoch:02d}-{loss_val:.2f}"))
     callbacks.append(EarlyStopping(monitor="loss_val",
                      patience=30, verbose=False, mode="min", check_finite=False))
 
@@ -64,7 +64,10 @@ def train_app(cfg: Config) -> None:
             precision = 16
 
     # * wandb logger
-    wandb_logger = WandbLogger(project="MNIST", log_model="all")
+    wandb_logger = WandbLogger(
+        name=cfg.wandb.job_name, project=cfg.wandb.project_name, log_model="all")
+    wandb_logger.watch(light_model, log="all",
+                       log_freq=cfg.wandb.model_log_freq)
 
     trainer = Trainer(
         callbacks=callbacks,

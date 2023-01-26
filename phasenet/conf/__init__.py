@@ -214,6 +214,16 @@ class PostProcessConfig:
     test_step_save_path: str = ""
 
 
+@dataclass
+class WandbConfig:
+    """
+    config wandb
+    """
+    job_name: str = "test"
+    project_name: str = "PhaseNet-TF"
+    model_log_freq: int = 200
+
+
 # * ======================================== * #
 # * main conf
 defaults = [
@@ -223,6 +233,7 @@ defaults = [
     {"train": "base_train"},
     {"visualize": "base_visualize"},
     {"postprocess": "base_postprocess"},
+    {"wandb": "base_wandb"},
     "_self_"
 ]
 
@@ -252,6 +263,7 @@ class Config:
     train: TrainConfig = MISSING
     visualize: VisualizeConfig = MISSING
     postprocess: PostProcessConfig = MISSING
+    wandb: WandbConfig = MISSING
 
 
 cs = ConfigStore.instance()
@@ -262,3 +274,4 @@ cs.store(group="model", name="base_model", node=ModelConfig)
 cs.store(group="train", name="base_train", node=TrainConfig)
 cs.store(group="visualize", name="base_visualize", node=VisualizeConfig)
 cs.store(group="postprocess", name="base_postprocess", node=PostProcessConfig)
+cs.store(group="wandb", name="base_wandb", node=WandbConfig)
