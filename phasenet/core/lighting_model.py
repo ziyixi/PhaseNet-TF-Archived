@@ -174,7 +174,7 @@ class PhaseNetModel(pl.LightningModule):
         predict = output['predict']
         if self.train_conf.loss_func == "kl_div":
             loss = nn.functional.kl_div(
-                nn.functional.log_softmax(predict, dim=1), label, reduction='batchmean',
+                nn.functional.log_softmax(predict, dim=1), torch.clamp(label, min=1e-8), reduction='batchmean',
             )
         elif self.train_conf.loss_func == "focal":
             loss = focal_loss(
