@@ -12,7 +12,7 @@ data:
   stack_ratio: 0.9738217746076991
   noise_replace_ratio: 0.3210340323794437
 
-  num_workers: 10
+  num_workers: 20
 
 train:
   epochs: 160

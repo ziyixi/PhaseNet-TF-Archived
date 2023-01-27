@@ -61,10 +61,10 @@ class WaveFormDataModule(pl.LightningDataModule):
                     self.data_conf, data_type="val", transform=transform, sgram_transform=sgram_transform)
 
     def train_dataloader(self):
-        return DataLoader(self.wave_train, batch_size=self.data_conf.train_batch_size, shuffle=self.data_conf.train_shuffle, num_workers=self.data_conf.num_workers)
+        return DataLoader(self.wave_train, batch_size=self.data_conf.train_batch_size, shuffle=self.data_conf.train_shuffle, num_workers=self.data_conf.num_workers, pin_memory=True, persistent_workers=True)
 
     def val_dataloader(self):
-        return DataLoader(self.wave_val, batch_size=self.data_conf.val_batch_size, shuffle=False, num_workers=self.data_conf.num_workers)
+        return DataLoader(self.wave_val, batch_size=self.data_conf.val_batch_size, shuffle=False, num_workers=self.data_conf.num_workers, pin_memory=True, persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.wave_test, batch_size=self.data_conf.test_batch_size, shuffle=False, num_workers=self.data_conf.num_workers)
+        return DataLoader(self.wave_test, batch_size=self.data_conf.test_batch_size, shuffle=False, num_workers=self.data_conf.num_workers, pin_memory=True, persistent_workers=True)
