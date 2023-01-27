@@ -30,7 +30,7 @@ class PhaseNetModel(pl.LightningModule):
         self.visualize_conf = conf.visualize
 
         # * define the model
-        # self.model = model(self.model_conf)
+        self.sgram_trans = GenSgram(self.spec_conf)
         self.model = None
         if model == UNet:
             self.model = UNet(
@@ -162,7 +162,8 @@ class PhaseNetModel(pl.LightningModule):
         self.log_hparms(metrics)
 
     def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
-        wave, label, sgram_raw = batch["data"], batch["label"], batch["sgram"]
+        wave, label = batch["data"], batch["label"]
+        sgram_raw = self.sgram_trans(wave)
         sgram = self.sgram_normalizer(sgram_raw)
         if self.model_conf.train_with_spectrogram:
             output = self.model(sgram)

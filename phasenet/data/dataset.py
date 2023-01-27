@@ -22,7 +22,7 @@ class WaveFormDataset(Dataset):
     Waveform dataset and phase arrival time tag.
     """
 
-    def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, scale_at_end_transform=None, sgram_transform=None, prepare: bool = False) -> None:
+    def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, scale_at_end_transform=None, prepare: bool = False) -> None:
         super().__init__()
         self.data_conf = data_conf
         self.data_type = data_type
@@ -30,7 +30,6 @@ class WaveFormDataset(Dataset):
         self.stack_transform = stack_transform
         self.replace_noise_transform = replace_noise_transform
         self.scale_at_end_transform = scale_at_end_transform
-        self.sgram_transform = sgram_transform
 
         # path related
         asdf_file_path = ""
@@ -221,8 +220,6 @@ class WaveFormDataset(Dataset):
             sample = self.replace_noise_transform(sample)
         if self.scale_at_end_transform:
             sample = self.scale_at_end_transform(sample)
-        if self.sgram_transform:
-            sample = self.sgram_transform(sample)
         return sample
 
     def save(self, file_name: str) -> None:

@@ -193,14 +193,3 @@ class ScaleAmp:
             "data": data
         })
         return sample_updated
-
-
-class TransformSgram:
-    def __init__(self, spec_conf: SpectrogramConfig) -> None:
-        self.sgram_trans = GenSgram(spec_conf)
-
-    def __call__(self, sample: Dict) -> Dict:
-        sample_updated = sample.copy()
-        wave = sample_updated["data"]
-        sample_updated["sgram"] = self.sgram_trans(wave)
-        return sample_updated

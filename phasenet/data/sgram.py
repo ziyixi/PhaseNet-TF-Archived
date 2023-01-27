@@ -44,8 +44,8 @@ class GenSgram(Spectrogram):
             imag = sgram.imag
             p = sgram.abs()**2+0.001
             ratio = torch.clamp_max(p, self.max_clamp)/p
-            # ! note, this can only be done without batch dimension
-            sgram = torch.cat([real*ratio, imag*ratio], dim=0)
+            # ! note, this can only be done with batch dimension
+            sgram = torch.cat([real*ratio, imag*ratio], dim=1)
             # resize seems not keeping imag
             sgram = F.resize(sgram, [self.height, self.width])
         else:
