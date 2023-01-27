@@ -19,8 +19,8 @@ train:
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
-  use_amp: true
-  use_a100: true
+  use_amp: false
+  use_a100: false
 
   distributed_devices: [1,3]
   # distributed_devices: [0,1,2]
@@ -68,5 +68,5 @@ hydra:
     tasks_per_node: 4
     cpus_per_task: 5
     mem_gb: 350
-    gres: gpu:a100:4
+    gres: gpu:v100:4
     account: cmse
