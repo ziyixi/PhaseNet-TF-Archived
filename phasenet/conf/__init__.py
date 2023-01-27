@@ -84,6 +84,7 @@ class SpectrogramConfig:
     width: int = 4800  # should equal to win_len*sampling_rate
     max_clamp: int = 3000  # ! hyper tune
     # * normalize factors from train_estimate_mean_std.py
+    mean_std_normalize: bool = True
     mean: List[float] = field(default_factory=lambda: [
         130.9636, 136.6858,  97.8700])
     std: List[float] = field(default_factory=lambda: [
