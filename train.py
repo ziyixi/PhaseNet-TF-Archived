@@ -42,7 +42,7 @@ def train_app(cfg: Config) -> None:
         SegModel = create_smp_model(model_conf=cfg.model)
         light_model = PhaseNetModel(SegModel, cfg)
     light_data = WaveFormDataModule(
-        data_conf=cfg.data, run_type=cfg.train.run_type)
+        data_conf=cfg.data, spec_conf=cfg.spectrogram, run_type=cfg.train.run_type)
     light_data.prepare_data()
 
     # * callbacks

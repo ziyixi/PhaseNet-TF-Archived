@@ -12,6 +12,8 @@ data:
   stack_ratio: 0.9738217746076991
   noise_replace_ratio: 0.3210340323794437
 
+  num_workers: 10
+
 train:
   epochs: 2
 
@@ -50,21 +52,21 @@ visualize:
   log_test_seprate_folder_path: ""
 
 wandb:
-  # job_name: baseline
-  job_name: test
-  # project_name: PhaseNet-TF
-  project_name: PhaseNet-TF-Test
+  job_name: baseline
+  # job_name: test
+  project_name: PhaseNet-TF
+  # project_name: PhaseNet-TF-Test
   model_log_freq: 500
 
 hydra:
   job:
-    name: test
-    # name: baseline
-  # launcher:
-  #   timeout_min: 239
-  #   nodes: 1
-  #   tasks_per_node: 4
-  #   cpus_per_task: 4
-  #   mem_gb: 100
-  #   gres: gpu:v100:4
-  #   account: cmse
+    # name: test
+    name: baseline
+  launcher:
+    timeout_min: 239
+    nodes: 1
+    tasks_per_node: 4
+    cpus_per_task: 4
+    mem_gb: 100
+    gres: gpu:v100:4
+    account: cmse

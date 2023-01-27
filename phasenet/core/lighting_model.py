@@ -11,7 +11,7 @@ from pytorch_lightning.utilities import rank_zero_only
 
 from phasenet.conf import Config
 from phasenet.core.loss import focal_loss
-from phasenet.core.sgram import GenSgram
+from phasenet.data.sgram import GenSgram
 from phasenet.model.unet import UNet
 from phasenet.utils.helper import Normalize
 from phasenet.utils.metrics import F1, Precision, Recall
@@ -30,7 +30,6 @@ class PhaseNetModel(pl.LightningModule):
         self.visualize_conf = conf.visualize
 
         # * define the model
-        self.sgram_trans = GenSgram(self.spec_conf)
         # self.model = model(self.model_conf)
         self.model = None
         if model == UNet:
@@ -163,8 +162,7 @@ class PhaseNetModel(pl.LightningModule):
         self.log_hparms(metrics)
 
     def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
-        wave, label = batch["data"], batch["label"]
-        sgram_raw = self.sgram_trans(wave)
+        wave, label, sgram_raw = batch["data"], batch["label"], batch["sgram"]
         sgram = self.sgram_normalizer(sgram_raw)
         if self.model_conf.train_with_spectrogram:
             output = self.model(sgram)

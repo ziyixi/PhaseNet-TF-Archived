@@ -67,6 +67,9 @@ class DataConfig:
     # * PS freq picked by Fan, used for visualizing
     load_ps_freq: bool = True
 
+    # * if calculate sgram in transforms
+    calculate_sgram: bool = True
+
 
 @dataclass
 class SpectrogramConfig:
