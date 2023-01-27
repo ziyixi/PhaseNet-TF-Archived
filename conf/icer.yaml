@@ -66,7 +66,7 @@ hydra:
     timeout_min: 239
     nodes: 1
     tasks_per_node: 4
-    cpus_per_task: 4
-    mem_gb: 100
+    cpus_per_task: 10
+    mem_gb: 200
     gres: gpu:v100:4
     account: cmse
