@@ -81,9 +81,8 @@ class PhaseNetModel(pl.LightningModule):
         self.metrics = nn.ModuleDict(metrics_dict)
 
         # * sgram normalizer
-        if self.spec_conf.mean_std_normalize:
-            self.sgram_normalizer = Normalize(
-                self.spec_conf.mean, self.spec_conf.std)
+        self.sgram_normalizer = Normalize(
+            self.spec_conf.mean, self.spec_conf.std)
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict, _ = self._shared_eval_step(
@@ -165,10 +164,7 @@ class PhaseNetModel(pl.LightningModule):
     def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
         wave, label = batch["data"], batch["label"]
         sgram_raw = self.sgram_trans(wave)
-        if self.spec_conf.mean_std_normalize:
-            sgram = self.sgram_normalizer(sgram_raw)
-        else:
-            sgram = sgram_raw
+        sgram = self.sgram_normalizer(sgram_raw)
         if self.model_conf.train_with_spectrogram:
             output = self.model(sgram)
         else:
