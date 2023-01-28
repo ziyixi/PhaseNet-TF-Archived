@@ -19,8 +19,8 @@ train:
 
   accelerator: gpu
   strategy: ddp_find_unused_parameters_false
-  use_amp: false
-  use_a100: false
+  use_amp: true
+  use_a100: true
 
   distributed_devices: [0,1,2,3]
 
@@ -63,10 +63,10 @@ hydra:
     # name: test
     name: baseline
   launcher:
-    timeout_min: 239
+    timeout_min: 120
     nodes: 1
     tasks_per_node: 4
     cpus_per_task: 5
     mem_gb: 150
-    gres: gpu:v100:4
+    gres: gpu:a100:4
     account: cmse
