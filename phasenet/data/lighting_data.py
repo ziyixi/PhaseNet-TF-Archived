@@ -4,9 +4,12 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose
 
-from phasenet.conf import DataConfig
+from phasenet.conf import DataConfig, InferenceConfig
 
 from .dataset import WaveFormDataset
+from .inference_dataset import (ProcessSeedTransform, SeedSqliteDataset,
+                                StreamNormalizeTransform,
+                                StreamToTensorTransform)
 from .transforms import (GenLabel, RandomShift, ReplaceNoise, ScaleAmp,
                          StackRand)
 
@@ -66,3 +69,23 @@ class WaveFormDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.wave_test, batch_size=self.data_conf.test_batch_size, shuffle=False, num_workers=self.data_conf.num_workers, pin_memory=True, persistent_workers=True)
+
+
+class ContiniousSeedDataModule(pl.LightningDataModule):
+    def __init__(self, data_conf: DataConfig, inference_conf: InferenceConfig):
+        super().__init__()
+        self.inference_conf = inference_conf
+        self.continious_dataset = None
+        # transforms
+        self.transform = Compose([
+            ProcessSeedTransform(data_conf),
+            StreamToTensorTransform(inference_conf),
+            StreamNormalizeTransform(inference_conf)
+        ])
+
+    def setup(self, stage: Optional[str] = None) -> None:
+        self.continious_dataset = SeedSqliteDataset(
+            self.inference_conf, transform=self.transform)
+
+    def predict_dataloader(self):
+        return DataLoader(self.continious_dataset, batch_size=self.inference_conf.inference_batch_size, shuffle=False, num_workers=self.inference_conf.num_workers, pin_memory=True)

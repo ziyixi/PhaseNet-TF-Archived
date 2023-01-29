@@ -4,6 +4,7 @@ load_conf.py
 load configuration files for the project.
 """
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from hydra.conf import HydraConf, JobConf, RunDir, SweepDir
@@ -225,6 +226,28 @@ class WandbConfig:
     model_log_freq: int = 200
 
 
+@dataclass
+class InferenceConfig:
+    """
+    config inference data and setup
+    """
+    sqlite_path: Path = MISSING  # the seed dir should be in the same dir as sqlite
+    # the csv file indicating what data to handle
+    continious_requirement_path: Path = MISSING
+    # handle length in s (output as a single stream)
+    continious_handle_time: int = 3600
+    # sampling rate
+    sampling_rate: int = 40
+    # number of points in each window
+    width: int = 4800
+    # sliding windows step
+    sliding_step: int = 2400
+
+    # * trainner setting
+    inference_batch_size: int = 1
+    num_workers: int = 0
+
+
 # * ======================================== * #
 # * main conf
 defaults = [
@@ -235,6 +258,7 @@ defaults = [
     {"visualize": "base_visualize"},
     {"postprocess": "base_postprocess"},
     {"wandb": "base_wandb"},
+    {"inference": "base_inference"},
     "_self_"
 ]
 
@@ -265,6 +289,7 @@ class Config:
     visualize: VisualizeConfig = MISSING
     postprocess: PostProcessConfig = MISSING
     wandb: WandbConfig = MISSING
+    inference: InferenceConfig = MISSING
 
 
 cs = ConfigStore.instance()
@@ -276,3 +301,4 @@ cs.store(group="train", name="base_train", node=TrainConfig)
 cs.store(group="visualize", name="base_visualize", node=VisualizeConfig)
 cs.store(group="postprocess", name="base_postprocess", node=PostProcessConfig)
 cs.store(group="wandb", name="base_wandb", node=WandbConfig)
+cs.store(group="inference", name="base_inference", node=InferenceConfig)
