@@ -1,0 +1,72 @@
+# @package _global_
+data:
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20221124
+  train: tongaml_train.h5
+  test: tongaml_test.h5
+  val: tongaml_val.h5
+  train_trans: ["shift", "scale", "label"]
+  val_trans: ["scale", "label"]
+  test_trans: ["scale", "label"]
+
+  # tuned
+  stack_ratio: 0.9738217746076991
+  noise_replace_ratio: 0.3210340323794437
+
+  num_workers: 5
+
+train:
+  epochs: 160
+
+  accelerator: gpu
+  strategy: ddp_find_unused_parameters_false
+  use_amp: false
+  use_a100: false
+
+  distributed_devices: [0,1,2,3]
+
+  run_type: train
+
+  deterministic: false
+
+  step_lr_gamma: 0.6
+  learning_rate: 0.001
+
+model:
+  nn_model: deeplabv3+
+  in_channels: 6
+
+spectrogram:
+  # mean: [130.9636, 136.6858,  97.8700]
+  # std: [362.7432, 374.5648, 296.8759]
+  mean_std_normalize: false
+  # mean: [ 2.2663e-06,  4.6748e-06, -8.1938e-06, -2.6783e-05,  1.3381e-05, 6.1216e-06]
+  # std: [5.3443, 5.4437, 4.6404, 5.3411, 5.4404, 4.6374]
+  power: null
+
+visualize:
+  log_val: true
+  log_test: true
+  log_epoch: 30
+  sgram_threshold: 500 
+  log_test_seprate_folder: false
+  log_test_seprate_folder_path: ""
+
+wandb:
+  job_name: checkpoint
+  # job_name: test
+  project_name: PhaseNet-TF-CheckPoint
+  # project_name: PhaseNet-TF-Test
+  model_log_freq: 500
+
+hydra:
+  job:
+    # name: test
+    name: checkpoint
+  launcher:
+    timeout_min: 239
+    nodes: 1
+    tasks_per_node: 4
+    cpus_per_task: 5
+    mem_gb: 150
+    gres: gpu:v100:4
+    account: cmse
