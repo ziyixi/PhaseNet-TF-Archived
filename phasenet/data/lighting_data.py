@@ -77,15 +77,15 @@ class ContiniousSeedDataModule(pl.LightningDataModule):
         self.inference_conf = inference_conf
         self.continious_dataset = None
         # transforms
-        self.transform = Compose([
+        transform = Compose([
             ProcessSeedTransform(data_conf),
             StreamToTensorTransform(inference_conf),
             StreamNormalizeTransform(inference_conf)
         ])
-
-    def setup(self, stage: Optional[str] = None) -> None:
         self.continious_dataset = SeedSqliteDataset(
-            self.inference_conf, transform=self.transform)
+            self.inference_conf, transform=transform)
 
     def predict_dataloader(self):
-        return DataLoader(self.continious_dataset, batch_size=self.inference_conf.inference_batch_size, shuffle=False, num_workers=self.inference_conf.num_workers, pin_memory=True)
+        loader = DataLoader(self.continious_dataset, batch_size=self.inference_conf.inference_batch_size,
+                            shuffle=False, num_workers=self.inference_conf.num_workers, pin_memory=True)
+        return loader

@@ -102,11 +102,11 @@ class StreamToTensorTransform:
         if min_length < self.inference_conf.width:
             min_length = self.inference_conf.width
         # in the extreme case, min_length might be 0
-        data = torch.zeros(3, min_length)
+        data_np = np.zeros((3, min_length))
         for i in range(3):
-            data[i, :len(traces[i].data)] = torch.from_numpy(
+            data_np[i, :len(traces[i].data)] = torch.from_numpy(
                 traces[i].data)
-        sample["data"] = data
+        sample["data"] = torch.tensor(data_np, dtype=torch.float32)
         return sample
 
 

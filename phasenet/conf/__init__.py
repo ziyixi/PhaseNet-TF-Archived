@@ -134,7 +134,7 @@ class TrainConfig:
     the trainning configuration
     """
     # * random seed
-    deterministic: bool = True
+    deterministic: bool = False
     use_random_seed: bool = True
     random_seed: int = 666
     # * basic configs
@@ -249,6 +249,9 @@ class InferenceConfig:
 
     # * MISC
     unit_is_m: bool = True
+
+    # * checkpoint loading reference
+    wandb_checkpoint_reference: str = MISSING
 
 
 # * ======================================== * #
