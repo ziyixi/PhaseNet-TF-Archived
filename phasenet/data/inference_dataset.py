@@ -106,7 +106,7 @@ class StreamToTensorTransform:
         for i in range(3):
             data_np[i, :len(traces[i].data)] = torch.from_numpy(
                 traces[i].data)
-        sample["data"] = torch.tensor(data_np, dtype=torch.float32)
+        sample["data"] = torch.tensor(data_np, dtype=torch.float)
         return sample
 
 
@@ -136,8 +136,10 @@ class StreamNormalizeTransform:
         interp_func_stds = interp1d(times, stds, kind="cubic", bounds_error=False,
                                     fill_value="extrapolate", assume_sorted=True)
         # * now we normalize the raw dataset
-        data_mean = torch.tensor(interp_func_means(np.arange(length)))
-        data_std = torch.tensor(interp_func_stds(np.arange(length)))
+        data_mean = torch.tensor(interp_func_means(
+            np.arange(length)), dtype=torch.float)
+        data_std = torch.tensor(interp_func_stds(
+            np.arange(length)), dtype=torch.float)
         data_std[torch.abs(data) < 1e-6] = 1.
         data = (data-data_mean)/data_std
         sample["data"] = data

@@ -76,10 +76,9 @@ def inference_app(cfg: Config) -> None:
     artifact = run.use_artifact(
         cfg.inference.wandb_checkpoint_reference, type="model")
     artifact_dir = artifact.download()
-    logger.info(f"checkpoint is downloaded to {artifact_dir}")
 
-    trainer.predict(model=light_model, dataloaders=light_data.predict_dataloader(),
-                    ckpt_path="/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/baseline/2023-01-27_17-10-42/0/PhaseNet-TF/b2zisxi6/checkpoints/epoch=66-loss_val=143.78.ckpt")
+    trainer.predict(model=light_model,
+                    dataloaders=light_data.predict_dataloader(), ckpt_path=Path(artifact_dir)/"model.ckpt")
 
 
 if __name__ == "__main__":
