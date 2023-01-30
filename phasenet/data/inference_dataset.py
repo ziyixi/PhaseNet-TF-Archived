@@ -20,9 +20,11 @@ class SeedSqliteDataset(Dataset):
     def __init__(self, inference_conf: InferenceConfig, transform=None) -> None:
         super().__init__()
         self.transform = transform
+        self.inference_conf = inference_conf
         self.client = Client(database=str(inference_conf.sqlite_path))
         # * index all the requirement
-        requirement = pd.read_csv(inference_conf.continious_requirement_path)
+        requirement = pd.read_csv(
+            inference_conf.continious_requirement_path, comment='#')
         requirement.sort_values(
             by=["network", "station", "start_time", "end_time"], ascending=[True, True, True, True])
 
@@ -30,8 +32,8 @@ class SeedSqliteDataset(Dataset):
         for irow in range(len(requirement)):
             row = requirement.iloc[irow]
             time_diff = (UTCDateTime(row.end_time)-UTCDateTime(row.start_time))
-            steps = np.ceil(
-                time_diff/inference_conf.continious_handle_time)
+            steps = int(np.ceil(
+                time_diff/inference_conf.continious_handle_time))
             for istep in range(steps):
                 start = UTCDateTime(
                     row.start_time)+istep*inference_conf.continious_handle_time
@@ -45,8 +47,15 @@ class SeedSqliteDataset(Dataset):
     def __getitem__(self, idx: int) -> Dict:
         net, sta, start, end = self.all_splits[idx]
         st = self.client.get_waveforms(net, sta, "*", "*", start, end)
+        if self.inference_conf.unit_is_m:
+            for i in range(len(st)):
+                st[i].data *= 10**9
         # * the transform will expect st as the input, after processing, return tensor dict
         res = {
+            "net": net,
+            "sta": sta,
+            "start": str(start),
+            "end": str(end),
             "stream": st
         }
         if self.transform:
@@ -61,6 +70,8 @@ class ProcessSeedTransform:
 
     def __call__(self, sample: Dict) -> Dict:
         stream = sample["stream"]
+        # we only do 3s taper
+        stream.taper(None, max_length=3)
         stream.filter('bandpass', freqmin=self.data_conf.filter_freqmin, freqmax=self.data_conf.filter_freqmax,
                       corners=self.data_conf.filter_corners, zerophase=self.data_conf.filter_zerophase)
         sample["stream"] = stream
@@ -86,14 +97,15 @@ class StreamToTensorTransform:
         min_length = min(len(item) for item in traces)
         # we have to pad 0, so min_length can be divied by sliding_step
         # and it's at least width
-        div = np.ceil(min_length/self.inference_conf.sliding_step)
+        div = int(np.ceil(min_length/self.inference_conf.sliding_step))
         min_length = self.inference_conf.sliding_step*div
         if min_length < self.inference_conf.width:
             min_length = self.inference_conf.width
         # in the extreme case, min_length might be 0
         data = torch.zeros(3, min_length)
         for i in range(3):
-            data[i, :min_length] = traces.data[:min_length]
+            data[i, :len(traces[i].data)] = torch.from_numpy(
+                traces[i].data)
         sample["data"] = data
         return sample
 
@@ -105,6 +117,7 @@ class StreamNormalizeTransform:
 
     def __call__(self, sample: Dict) -> Dict:
         data = sample["data"]
+        sample["raw_data"] = sample["data"].clone()
         length = data.shape[1]
         steps = (length-self.inference_conf.width)//self.inference_conf.sliding_step+1
         # * calculate each sliding windows' mean and std
@@ -125,7 +138,7 @@ class StreamNormalizeTransform:
         # * now we normalize the raw dataset
         data_mean = torch.tensor(interp_func_means(np.arange(length)))
         data_std = torch.tensor(interp_func_stds(np.arange(length)))
-        data_std[data_std < 1e-8] = 1.
+        data_std[torch.abs(data) < 1e-6] = 1.
         data = (data-data_mean)/data_std
         sample["data"] = data
         return sample

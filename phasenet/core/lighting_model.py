@@ -197,10 +197,6 @@ class PhaseNetModel(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             self.parameters(), lr=self.train_conf.learning_rate, weight_decay=self.train_conf.weight_decay, amsgrad=False
         )
-        # optimizer = torch.optim.SGD(
-        #     self.parameters(), lr=self.train_conf.learning_rate, momentum=0.9)
-        # lr_scheduler = torch.optim.lr_scheduler.LinearLR(
-        #     optimizer, start_factor=1, end_factor=0.1, total_iters=self._num_training_steps)
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=self.train_conf.step_lr_milestones, gamma=self.train_conf.step_lr_gamma
         )
@@ -210,6 +206,19 @@ class PhaseNetModel(pl.LightningModule):
                 "scheduler": lr_scheduler,
                 "interval": "epoch"
             }
+        }
+
+    def predict_step(self, batch: Dict, batch_idx: int) -> Dict:
+        wave = batch["data"]
+        sgram = self.sgram_trans(wave)
+        output = self.model(sgram)
+        predict = nn.functional.softmax(output["predict"], dim=1)
+        peaks = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+                              self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
+        return {
+            "predict": predict,
+            "arrivals": peaks["arrivals"],
+            "amps": peaks["amps"]
         }
 
     # * ============== helpers ============== * #

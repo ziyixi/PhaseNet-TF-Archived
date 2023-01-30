@@ -247,6 +247,9 @@ class InferenceConfig:
     inference_batch_size: int = 1
     num_workers: int = 0
 
+    # * MISC
+    unit_is_m: bool = True
+
 
 # * ======================================== * #
 # * main conf

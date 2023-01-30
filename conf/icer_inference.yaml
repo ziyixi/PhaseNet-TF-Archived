@@ -1,0 +1,11 @@
+# @package _global_
+inference:
+  sqlite_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_continious/tongaml_continious_response_removed.sqlite
+  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/test.csv
+
+hydra:
+  job:
+    name: test
+
+data:
+  filter_freqmin: 2
