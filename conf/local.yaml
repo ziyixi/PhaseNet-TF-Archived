@@ -15,9 +15,16 @@ train:
   limit_test_batches: 2
 
 visualize:
-  log_train: false
-  log_val: false
-  log_test: false
+  example_num: 2
+  log_train: true
+  log_val: true
+  log_test: true
+
+wandb:
+  # job_name: baseline
+  job_name: test
+  # project_name: PhaseNet-TF
+  project_name: PhaseNet-TF-Test
 
 hydra:
   job:
