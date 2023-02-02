@@ -33,14 +33,14 @@ class PhaseNetModel(pl.LightningModule):
         self.model = None
         if model == UNet:
             self.model = UNet(
-                features=self.model_conf.init_features,
+                features=self.model_conf.unet_init_features,
                 in_cha=self.model_conf.in_channels,
                 out_cha=self.model_conf.out_channels,
-                first_layer_repeating_cnn=self.model_conf.first_layer_repeating_cnn,
+                first_layer_repeating_cnn=self.model_conf.unet_first_layer_repeating_cnn,
                 n_freq=self.model_conf.n_freq,
-                ksize_down=self.model_conf.encoder_conv_kernel_size,
-                ksize_up=self.model_conf.decoder_conv_kernel_size,
-                encoder_decoder_depth=self.model_conf.encoder_decoder_depth,
+                ksize_down=self.model_conf.unet_encoder_conv_kernel_size,
+                ksize_up=self.model_conf.unet_decoder_conv_kernel_size,
+                encoder_decoder_depth=self.model_conf.unet_encoder_decoder_depth,
                 calculate_skip_for_encoder=self.model_conf.train_with_spectrogram
             )
         else:
@@ -234,14 +234,32 @@ class PhaseNetModel(pl.LightningModule):
             "data/noise_replace_ratio": self.conf.data.noise_replace_ratio,
             "spectrogram/n_fft": self.conf.spectrogram.n_fft,
             "spectrogram/max_clamp": self.conf.spectrogram.max_clamp,
-            "model/init_features": self.conf.model.init_features,
-            "model/first_layer_repeating_cnn": self.conf.model.first_layer_repeating_cnn,
-            "model/encoder_conv_kernel_size": torch.tensor(self.conf.model.encoder_conv_kernel_size),
-            "model/decoder_conv_kernel_size": torch.tensor(self.conf.model.decoder_conv_kernel_size),
-            "model/encoder_decoder_depth": self.conf.model.encoder_decoder_depth,
             "train/learning_rate": self.conf.train.learning_rate,
             "train/weight_decay": self.conf.train.weight_decay,
         }
+
+        if self.model_conf.nn_model == "unet":
+            hparam.update(
+                {
+                    "model/unet_init_features": self.conf.model.unet_init_features,
+                    "model/unet_first_layer_repeating_cnn": self.conf.model.unet_first_layer_repeating_cnn,
+                    "model/unet_encoder_conv_kernel_size": torch.tensor(self.conf.model.unet_encoder_conv_kernel_size),
+                    "model/unet_decoder_conv_kernel_size": torch.tensor(self.conf.model.unet_decoder_conv_kernel_size),
+                    "model/unet_encoder_decoder_depth": self.conf.model.unet_encoder_decoder_depth
+                }
+            )
+        elif self.model_conf.nn_model == "deeplabv3+":
+            hparam.update(
+                {
+                    "model/deeplab_encoder_name": self.conf.model.deeplab_encoder_name,
+                    "model/deeplab_encoder_depth": self.conf.model.deeplab_encoder_depth,
+                    "model/deeplab_encoder_output_stride": self.conf.model.deeplab_encoder_output_stride,
+                    "model/deeplab_decoder_channels": self.conf.model.deeplab_decoder_channels,
+                    "model/deeplab_decoder_atrous_rates": torch.tensor(self.conf.model.deeplab_decoder_atrous_rates),
+                    "model/deplab_upsampling": self.conf.model.deplab_upsampling
+                }
+            )
+
         if self.global_rank == 0:
             self.logger.experiment.config.update(hparam)
             self.logger.experiment.config.update(metrics)
