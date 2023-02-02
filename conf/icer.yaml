@@ -4,54 +4,16 @@ data:
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
-  train_trans: ["shift", "scale", "label"]
-  val_trans: ["scale", "label"]
-  test_trans: ["scale", "label"]
-
-  # tuned
-  stack_ratio: 0.9738217746076991
-  noise_replace_ratio: 0.3210340323794437
-
-  num_workers: 5
 
 train:
-  epochs: 160
-
   accelerator: gpu
-  strategy: ddp_find_unused_parameters_false
-  use_amp: false
-  use_a100: false
-
   distributed_devices: [0, 1, 2, 3]
-
-  run_type: train
-
-  deterministic: false
-
-  step_lr_gamma: 0.6
-  learning_rate: 0.001
-
-model:
-  nn_model: deeplabv3+
-  in_channels: 6
-
-spectrogram:
-  power: null
-
-visualize:
-  log_val: true
-  log_test: true
-  log_epoch: 30
-  sgram_threshold: 500
-  log_test_seprate_folder: false
-  log_test_seprate_folder_path: ""
 
 wandb:
   job_name: baseline
   # job_name: test
   project_name: PhaseNet-TF
   # project_name: PhaseNet-TF-Test
-  model_log_freq: 500
 
 hydra:
   job:

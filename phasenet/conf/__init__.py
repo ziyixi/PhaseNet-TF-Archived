@@ -40,16 +40,16 @@ class DataConfig:
     train_trans: List[str] = field(default_factory=lambda: [
         "shift", "scale", "label"])
     val_trans: List[str] = field(default_factory=lambda: [
-        "shift", "scale", "label"])
+        "scale", "label"])
     test_trans: List[str] = field(default_factory=lambda: [
-        "shift", "scale", "label"])
+        "scale", "label"])
 
     stack: bool = True
-    stack_ratio: float = 0.6  # ! hyper tune
+    stack_ratio: float = 0.9738217746076991  # ! hyper tune
     min_stack_gap: int = 100
 
     replace_noise: bool = True
-    noise_replace_ratio: float = 0.05  # ! hyper tune
+    noise_replace_ratio: float = 0.3210340323794437  # ! hyper tune
 
     scale_at_end: bool = True
     # * batch size and shuffle
@@ -58,7 +58,7 @@ class DataConfig:
     test_batch_size: int = 1
     train_shuffle: bool = True
     # * workers
-    num_workers: int = 2
+    num_workers: int = 5
 
     # * PS freq picked by Fan, used for visualizing
     load_ps_freq: bool = True
@@ -71,7 +71,7 @@ class SpectrogramConfig:
     """
     n_fft: int = 256  # ! hyper tune
     hop_length: int = 1
-    power: Optional[int] = 2
+    power: Optional[int] = None
     window_fn: str = "hann"
     freqmin: float = 0.
     freqmax: float = 10.
@@ -87,8 +87,8 @@ class ModelConfig:
     neural network model configuration
     """
     # can also be unet, deeplabv3+
-    nn_model: str = "unet"
-    in_channels: int = 3
+    nn_model: str = "deeplabv3+"
+    in_channels: int = 6
     out_channels: int = 4
     init_features: int = 32  # ! hyper tune
     # n_freq is not used when train_with_spectrogram==False
@@ -127,13 +127,13 @@ class TrainConfig:
     use_random_seed: bool = True
     random_seed: int = 666
     # * basic configs
-    learning_rate: float = 0.01  # ! hyper tune
+    learning_rate: float = 0.001  # ! hyper tune
     weight_decay: float = 1e-3  # ! hyper tune
-    epochs: int = 100
+    epochs: int = 160
     sync_batchnorm: bool = True
     # * acceleration
     accelerator: str = "cpu"
-    strategy: Optional[str] = None
+    strategy: Optional[str] = "ddp_find_unused_parameters_false"
     use_amp: bool = False
     use_a100: bool = False
     distributed_devices: List[int] = field(
@@ -146,15 +146,13 @@ class TrainConfig:
     log_every_n_steps: int = 1
     # * loss func
     loss_func: str = "kl_div"
-    # * when do seprate testing, load the ckpt path
-    ckpt_path: Optional[str] = None
     # * run_type, whether train or hyper_tune
     run_type: str = "train"
 
     # * optimizer
     step_lr_milestones: List[int] = field(
         default_factory=lambda: [30, 60, 90, 120])
-    step_lr_gamma: float = 0.5
+    step_lr_gamma: float = 0.6
 
 
 @dataclass
@@ -165,15 +163,15 @@ class VisualizeConfig:
     example_num: int = 8
     # considered first, if so, will log final and also consider log_epoch
     log_train: bool = False
-    log_val: bool = False
-    log_test: bool = False
+    log_val: bool = True
+    log_test: bool = True
     # if log every several epochs
-    log_epoch: Optional[int] = None
+    log_epoch: Optional[int] = 30
     # figs
-    sgram_threshold: Optional[int] = None
+    sgram_threshold: Optional[int] = 500
     # save test to seprate folder
     log_test_seprate_folder: bool = False
-    log_test_seprate_folder_path: str = ""
+    log_test_seprate_folder_path: str = MISSING
     # plot filtered waveform instead based on the PS/P arrival?
     # can be all (filter based on data config), P (P max range/fixed range), S (S max range)
     plot_waveform_based_on: str = "all"
@@ -212,7 +210,7 @@ class WandbConfig:
     """
     job_name: str = "test"
     project_name: str = "PhaseNet-TF"
-    model_log_freq: int = 200
+    model_log_freq: int = 500
 
 
 @dataclass
