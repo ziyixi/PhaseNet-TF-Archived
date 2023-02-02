@@ -18,55 +18,55 @@ class DataConfig:
     the dataset path configuration 
     """
     # * data path
-    data_dir: str = MISSING
-    train: str = MISSING
-    test: str = MISSING
-    val: str = MISSING
+    data_dir: str = MISSING  # the directory containing train/test/val h5 files
+    train: str = MISSING  # the training h5 file basename
+    test: str = MISSING  # the test h5 file basename
+    val: str = MISSING  # the val h5 file basename
+    # The phases to predict, h5 file should contain the phases' info
     phases: List[str] = field(default_factory=lambda: ["TP", "TS", "TPS"])
     # * cut win in dataset
-    win_length: float = 120.
-    left_extend: float = 10.
-    right_extend: float = 110.
-    avoid_first_ten_seconds: bool = True  # avoid taper effect
-    avoid_last_ten_seconds: bool = True  # avoid taper effect
-    width: int = 4800
+    win_length: float = 120.  # the window length in seconds
+    left_extend: float = 10.  # seconds before the first P arrival in the window
+    right_extend: float = 110.  # seconds after the first P arrival in the window
+    width: int = 4800  # the actual window length in # if points
     # * label
-    label_shape: str = "gaussian"
-    label_width: int = 120
+    label_shape: str = "gaussian"  # the label shape, can be gaussian or triangle
+    label_width: int = 120  # the full width of the label in # of points
     # * signal processing
-    filter_freqmin: float = 1
-    filter_freqmax: float = 10.
-    filter_corners: int = 4
-    filter_zerophase: bool = False
+    filter_freqmin: float = 1  # the filter min freq
+    filter_freqmax: float = 10.  # the filter max freq
+    filter_corners: int = 4  # the filter corners
+    filter_zerophase: bool = False  # the filter zerophase
     # * transforms, data agument
     train_trans: List[str] = field(default_factory=lambda: [
-        "shift", "scale", "label"])
+        "shift", "scale", "label"])  # the dataset transforms applied, can be shift, scale, and label
     val_trans: List[str] = field(default_factory=lambda: [
-        "shift", "scale", "label"])
+        "scale", "label"])  # the dataset transforms applied, can be shift, scale, and label
     test_trans: List[str] = field(default_factory=lambda: [
-        "shift", "scale", "label"])
+        "scale", "label"])  # the dataset transforms applied, can be shift, scale, and label
 
+    # if we construct the stacking waveforms in training datset, only applied in training
     stack: bool = True
-    stack_ratio: float = 0.6  # ! hyper tune
-    min_stack_gap: int = 100
+    stack_ratio: float = 0.9738217746076991  # hyper tune, the stack ratio
+    min_stack_gap: int = 100  # the min gap between two stacked phases
 
+    # if randomly replace the training waveform with the noise, only applied in training
     replace_noise: bool = True
-    noise_replace_ratio: float = 0.05  # ! hyper tune
+    # hyper tune, the noise replacing ratio
+    noise_replace_ratio: float = 0.3210340323794437
 
-    scale_at_end: bool = True
-    scale_max_amp: float = 1.0
-    scale_global_max: bool = True
-    scale_norm: bool = True  # normalization to std distribution, ignore scale_max_amp
+    scale_at_end: bool = True  # if we normalize the waveforms, applied on all the dataset
     # * batch size and shuffle
-    train_batch_size: int = 32
-    val_batch_size: int = 1
-    test_batch_size: int = 1
-    train_shuffle: bool = True
+    train_batch_size: int = 32  # the training batch size
+    val_batch_size: int = 1  # the validating batch size
+    test_batch_size: int = 1  # the testing batch size
+    train_shuffle: bool = True  # if we shuffle the dataset in training
     # * workers
-    num_workers: int = 2
+    # dataloader workers, applied on all the dataloader (except the inference)
+    num_workers: int = 5
 
     # * PS freq picked by Fan, used for visualizing
-    load_ps_freq: bool = True
+    load_ps_freq: bool = True  # if load the ps freq info in the h5 file
 
 
 @dataclass
@@ -74,22 +74,18 @@ class SpectrogramConfig:
     """
     Set confiuration to generate the spectrogram from the waveform dataset
     """
-    n_fft: int = 256  # ! hyper tune
+    n_fft: int = 256  # hyper tune, use n_fft points to do fft in one sliding window
+    # the distance between neighboring sliding window frames.
     hop_length: int = 1
-    power: Optional[int] = 2
-    window_fn: str = "hann"
-    freqmin: float = 0.
-    freqmax: float = 10.
-    sampling_rate: int = 40
-    height: int = 64
-    width: int = 4800  # should equal to win_len*sampling_rate
-    max_clamp: int = 3000  # ! hyper tune
-    # * normalize factors from train_estimate_mean_std.py
-    mean_std_normalize: bool = True
-    mean: List[float] = field(default_factory=lambda: [
-        130.9636, 136.6858,  97.8700])
-    std: List[float] = field(default_factory=lambda: [
-        362.7432, 374.5648, 296.8759])
+    power: Optional[int] = None  # the power in doing stft, Non
+    window_fn: str = "hann"  # the window to use when doing stft
+    freqmin: float = 0.  # the output spec min freq
+    freqmax: float = 10.  # the output spec max freq
+    sampling_rate: int = 40  # the samping rate of the waveform
+    height: int = 64  # the output spec height
+    # should equal to win_len*sampling_rate (data.width), the output spec width
+    width: int = 4800
+    max_clamp: int = 3000  # hyper tune, the spec max clamp
 
 
 @dataclass
@@ -97,34 +93,37 @@ class ModelConfig:
     """
     neural network model configuration
     """
-    # can also be unet, deeplabv3+
-    nn_model: str = "unet"
-    in_channels: int = 3
+    nn_model: str = "deeplabv3+"  # can be unet or deeplabv3+
+    # the input channel to the model. Currently it's only affected by spec.power. When spec.power=2, change this to 3.
+    in_channels: int = 6
+    # the output channels, should be the number of phases plus 1 (noise output).
     out_channels: int = 4
-    init_features: int = 32  # ! hyper tune
     # n_freq is not used when train_with_spectrogram==False
     n_freq: int = 64  # should be the same as height in SpectrogramConfig
-    first_layer_repeating_cnn: int = 3  # ! hyper tune
-
-    encoder_conv_kernel_size: List[int] = field(
-        default_factory=lambda: [5, 5])  # ! hyper tune
-    decoder_conv_kernel_size: List[int] = field(
-        default_factory=lambda: [5, 5])  # ! hyper tune
-
-    encoder_decoder_depth: int = 5  # ! hyper tune
-
     # if False, train only use wave, should update other parameters by hand.
     train_with_spectrogram: bool = True
 
+    # * below are unet configs, start with unet_
+    unet_init_features: int = 32  # hyper tune, the feature number in Unet.
+    # hyper tune, the repeating CNN layers for the first block
+    unet_first_layer_repeating_cnn: int = 3
+    unet_encoder_conv_kernel_size: List[int] = field(
+        default_factory=lambda: [5, 5])  # hyper tune, the encoder kernel size
+    unet_decoder_conv_kernel_size: List[int] = field(
+        default_factory=lambda: [5, 5])  # hyper tune, the decoder kernel size
+    # hyper tune, number of encoder/decoder blocks
+    unet_encoder_decoder_depth: int = 5
+
     # * below are deeplab configs, start with deeplab_
-    # check when nn_model == deeplab
-    deeplab_encoder_name: Optional[str] = "resnet34"
-    deeplab_encoder_depth: Optional[int] = 5
-    deeplab_encoder_weights: Optional[str] = None
+    deeplab_encoder_name: Optional[str] = "resnet34"  # the backbone of deeplab
+    deeplab_encoder_depth: Optional[int] = 5  # the encoder depth
+    # the output stride of deeplab
     deeplab_encoder_output_stride: Optional[int] = 16
+    # the decoder channels of deeplab
     deeplab_decoder_channels: Optional[int] = 256
     deeplab_decoder_atrous_rates: List[int] = field(default_factory=lambda: [
-        12, 24, 36])
+        12, 24, 36])  # the deeplab atrous rates
+    # the final output upsamling ratio of deeplab
     deplab_upsampling: Optional[int] = 4
 
 
@@ -134,38 +133,44 @@ class TrainConfig:
     the trainning configuration
     """
     # * random seed
+    # if use deterministic algorithms. It can help with reproducibility. But it might fail on segmentation models.
+    # see https://discuss.pytorch.org/t/non-deterministic-behavior-of-pytorch-upsample-interpolate/42842
     deterministic: bool = False
-    use_random_seed: bool = True
-    random_seed: int = 666
+    use_random_seed: bool = True  # if we want to use the random seed
+    random_seed: int = 666  # the random seed
     # * basic configs
-    learning_rate: float = 0.01  # ! hyper tune
-    weight_decay: float = 1e-3  # ! hyper tune
-    epochs: int = 100
-    sync_batchnorm: bool = True
+    learning_rate: float = 0.001  # hyper tune, the learning rate
+    weight_decay: float = 1e-3  # hyper tune, the penalty term ratio for L2 norm
+    epochs: int = 160  # the number of epochs (at max) to run
+    sync_batchnorm: bool = True  # if sync batch between different GPUs
     # * acceleration
+    # the accelerator to use, can be cpu or gpu at the moment.
     accelerator: str = "cpu"
-    strategy: Optional[str] = None
-    use_amp: bool = False
+    # the strategy to use, will be None when accelerator=='cpu'
+    strategy: Optional[str] = "ddp_find_unused_parameters_false"
+    use_amp: bool = False  # if use amp, might be overflow if use v100
+    # if use a100 (along with amp). When use a100 without amp, can set this to be False.
     use_a100: bool = False
     distributed_devices: List[int] = field(
-        default_factory=lambda: [0, 1, 2, 3])
+        default_factory=lambda: [0, 1, 2, 3])  # the GPUs to use, will be None when accelerator=='cpu'
     # * test on local
+    # the train batches in the test mode
     limit_train_batches: Optional[int] = None
-    limit_val_batches: Optional[int] = None
+    limit_val_batches: Optional[int] = None  # the val batches in the test mode
+    # the test batches in the test mode
     limit_test_batches: Optional[int] = None
     # * logging
-    log_every_n_steps: int = 1
+    log_every_n_steps: int = 1  # how often to log with steps
     # * loss func
-    loss_func: str = "kl_div"
-    # * when do seprate testing, load the ckpt path
-    ckpt_path: Optional[str] = None
+    loss_func: str = "kl_div"  # the loss func to use, currently support kl_div and focal
     # * run_type, whether train or hyper_tune
+    # the run type, only influence the hyper_tune behavior to decide if load train/val or test dataset.
     run_type: str = "train"
 
     # * optimizer
     step_lr_milestones: List[int] = field(
-        default_factory=lambda: [30, 60, 90, 120])
-    step_lr_gamma: float = 0.5
+        default_factory=lambda: [30, 60, 90, 120])  # at which steps the lr is decayed
+    step_lr_gamma: float = 0.6  # the decay ratio
 
 
 @dataclass
@@ -173,20 +178,18 @@ class VisualizeConfig:
     """
     the visualization configuration
     """
-    example_num: int = 8
-    # considered first, if so, will log final and also consider log_epoch
-    log_train: bool = False
-    log_val: bool = False
-    log_test: bool = False
-    # if log every several epochs
-    log_epoch: Optional[int] = None
-    # figs
-    sgram_threshold: Optional[int] = None
-    # save test to seprate folder
+    example_num: int = 8  # the number of figs to save in logging
+    log_train: bool = False  # if log the training step
+    log_val: bool = True  # if log the val step
+    log_test: bool = True  # if log the test step
+    log_epoch: Optional[int] = 30  # logging epochs step
+    # when plotting the sgram, what's the max clamp threshold
+    sgram_threshold: Optional[int] = 500
+    # in test_step, if logging to a seprate dir. Will be used along with log_test.
     log_test_seprate_folder: bool = False
-    log_test_seprate_folder_path: str = ""
-    # plot filtered waveform instead based on the PS/P arrival?
-    # can be all (filter based on data config), P (P max range/fixed range), S (S max range)
+    log_test_seprate_folder_path: str = MISSING  # the folder dir.
+    # It will influence the filter range in plotting waveforms.
+    # can be all (filter based on data config), P (P max range/fixed range), PS (from the max horizontal amp in spec)
     plot_waveform_based_on: str = "all"
 
 
@@ -196,6 +199,7 @@ class PostProcessConfig:
     post process the model output, such as finding peak, cal metrics etc.
     """
     # metrics
+    # within metrics_dt_threshold seconds, we count the phase is correctly detected.
     metrics_dt_threshold: float = 1.0
 
     # peaks
@@ -204,16 +208,17 @@ class PostProcessConfig:
             "TP": 0.5,
             "TS": 0.5,
             "TPS": 0.3
-        })  # the peaks must have possibility at
+        })  # above the threshold, we regard the phases to be detected
     sensitive_distances: Dict[str, float] = field(
         default_factory=lambda: {
             "TP": 5.0,
             "TS": 5.0,
             "TPS": 5.0
-        })  # when finding peaks, ignore close peaks in seconds
-    # further analysis for test step
+        })  # within sensitive_distances seconds, we extract the peaks
+
+    # in test_step, if we save the temporary result to disk
     save_test_step_to_disk: bool = False
-    test_step_save_path: str = ""
+    test_step_save_path: str = MISSING  # the test_step dumping directory
 
 
 @dataclass
@@ -223,7 +228,7 @@ class WandbConfig:
     """
     job_name: str = "test"
     project_name: str = "PhaseNet-TF"
-    model_log_freq: int = 200
+    model_log_freq: int = 500
 
 
 @dataclass
@@ -248,10 +253,11 @@ class InferenceConfig:
     num_workers: int = 0
 
     # * MISC
+    # if the unit is m instead of nm. Might have no effect, put it here for numerical stability.
     unit_is_m: bool = True
 
     # * checkpoint loading reference
-    wandb_checkpoint_reference: str = MISSING
+    wandb_checkpoint_reference: str = MISSING  # the w&b checkpoint reference path
 
     # * infrence output
     inference_output_dir: Path = MISSING

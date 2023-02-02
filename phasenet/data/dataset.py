@@ -12,16 +12,13 @@ from typing import Dict, List
 import numpy as np
 import torch
 from obspy import UTCDateTime
-from phasenet.conf import DataConfig
 from pyasdf import ASDFDataSet
 from torch.utils.data import Dataset
 
+from phasenet.conf import DataConfig
+
 
 class WaveFormDataset(Dataset):
-    """
-    Waveform dataset and phase arrival time tag.
-    """
-
     def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, scale_at_end_transform=None, prepare: bool = False) -> None:
         super().__init__()
         self.data_conf = data_conf
@@ -91,8 +88,8 @@ class WaveFormDataset(Dataset):
             end += -start
             start = 0
         left_signal_start = start-self.data_conf.win_length
-        if self.data_conf.avoid_first_ten_seconds:
-            left_signal_start -= 10
+        # cut window 10 seconds before to do taper
+        left_signal_start -= 10
         left_signal_end = start
         right_signal_start = end
         right_signal_end = end+self.data_conf.win_length
@@ -143,12 +140,9 @@ class WaveFormDataset(Dataset):
                 starttime=left_signal_start, endtime=left_signal_end)
             right_wave = trace.slice(
                 starttime=right_signal_start, endtime=right_signal_end)
-            if self.data_conf.avoid_last_ten_seconds:
-                noise_wave = trace.slice(
-                    starttime=trace.stats.endtime-self.data_conf.win_length-10, endtime=trace.stats.endtime-10)
-            else:
-                noise_wave = trace.slice(
-                    starttime=trace.stats.endtime-self.data_conf.win_length, endtime=trace.stats.endtime)
+            # cut the noise window 10 seconds before the end point to avoid the taper effect
+            noise_wave = trace.slice(
+                starttime=trace.stats.endtime-self.data_conf.win_length-10, endtime=trace.stats.endtime-10)
             # to torch
             wave_data = torch.from_numpy(
                 wave.data)
@@ -158,8 +152,8 @@ class WaveFormDataset(Dataset):
             noise_res[i, :] = noise_data[:noise_res.shape[1]]
             # left wave might not be that long, we need to fill the noise to avoid abrupt jump
             left_wave_data = torch.from_numpy(left_wave.data)
-            if self.data_conf.avoid_first_ten_seconds:
-                left_wave_data = left_wave_data[int(10*sampling_rate):]
+            # cut window 10 seconds before to do taper
+            left_wave_data = left_wave_data[int(10*sampling_rate):]
             if len(left_wave_data) > 0:
                 left_wave_data = left_wave_data[:left_res.shape[1]]
                 left_res[i, -len(left_wave_data):] = left_wave_data[:]

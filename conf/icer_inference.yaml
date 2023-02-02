@@ -2,21 +2,9 @@
 data:
   filter_freqmin: 1
 
-train:
-  accelerator: cpu
-#   strategy: ddp_find_unused_parameters_false
-#   use_amp: false
-#   use_a100: false
-
-#   distributed_devices: [0,1,2,3]
-
-model:
-  nn_model: deeplabv3+
-  in_channels: 6
-
-spectrogram:
-  mean_std_normalize: false
-  power: null
+# train:
+#   accelerator: gpu
+#   distributed_devices: [3]
 
 wandb:
   job_name: test

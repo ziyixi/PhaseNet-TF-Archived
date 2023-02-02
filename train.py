@@ -94,10 +94,12 @@ def train_app(cfg: Config) -> None:
     # * train and val
     light_data.setup(stage="fit")
     trainer.fit(light_model, light_data)
-    # * test
 
+    # * test
     light_data.setup(stage="test")
     metrics = trainer.test(datamodule=light_data, ckpt_path='best')
+
+    # * return the value, if needed by parameter tuning
     return metrics[0]["loss_test"]
 
 

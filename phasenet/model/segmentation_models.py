@@ -16,7 +16,7 @@ def create_smp_model(model_conf: ModelConfig) -> nn.Module:
         image_model = smp.DeepLabV3Plus(
             encoder_name=model_conf.deeplab_encoder_name,
             encoder_depth=model_conf.deeplab_encoder_depth,
-            encoder_weights=model_conf.deeplab_encoder_weights,
+            encoder_weights=None,
             encoder_output_stride=model_conf.deeplab_encoder_output_stride,
             decoder_channels=model_conf.deeplab_decoder_channels,
             decoder_atrous_rates=tuple(

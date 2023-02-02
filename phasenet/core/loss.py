@@ -2,6 +2,17 @@ import torch
 
 
 def focal_loss(inputs: torch.Tensor, targets: torch.Tensor, alpha=0.8, gamma=2) -> torch.Tensor:
+    """Calculate the focal loss
+
+    Args:
+        inputs (torch.Tensor): the input array
+        targets (torch.Tensor): the target array
+        alpha (float, optional): the focal loss coefficient. Defaults to 0.8.
+        gamma (int, optional): the focal loss coefficient. Defaults to 2.
+
+    Returns:
+        torch.Tensor: _description_
+    """
     # first compute binary cross-entropy
     x = inputs.view(-1)
     y = targets.view(-1)
