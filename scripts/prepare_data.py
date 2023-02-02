@@ -13,7 +13,7 @@ import numpy as np
 import obspy
 import pandas as pd
 from loguru import logger
-from obspy.core.event import Origin, Catalog
+from obspy.core.event import Catalog, Origin
 from obspy.core.event.event import Event
 from obspy.core.event.magnitude import Magnitude
 from obspy.core.inventory.inventory import Inventory

@@ -13,7 +13,6 @@ from phasenet.conf import Config
 from phasenet.core.loss import focal_loss
 from phasenet.data.sgram import GenSgram
 from phasenet.model.unet import UNet
-from phasenet.utils.helper import Normalize
 from phasenet.utils.metrics import F1, Precision, Recall
 from phasenet.utils.peaks import extract_peaks
 from phasenet.utils.visualize import VisualizeInfo
@@ -79,11 +78,6 @@ class PhaseNetModel(pl.LightningModule):
                     metrics_dict[stage][phase])
             metrics_dict[stage] = nn.ModuleDict(metrics_dict[stage])
         self.metrics = nn.ModuleDict(metrics_dict)
-
-        # * sgram normalizer
-        if self.spec_conf.mean_std_normalize:
-            self.sgram_normalizer = Normalize(
-                self.spec_conf.mean, self.spec_conf.std)
 
     def training_step(self, batch: Dict, batch_idx: int) -> torch.Tensor:
         loss, sgram, predict, _ = self._shared_eval_step(
@@ -164,11 +158,7 @@ class PhaseNetModel(pl.LightningModule):
 
     def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
         wave, label = batch["data"], batch["label"]
-        sgram_raw = self.sgram_trans(wave)
-        if self.spec_conf.mean_std_normalize:
-            sgram = self.sgram_normalizer(sgram_raw)
-        else:
-            sgram = sgram_raw
+        sgram = self.sgram_trans(wave)
         if self.model_conf.train_with_spectrogram:
             output = self.model(sgram)
         else:
@@ -183,15 +173,15 @@ class PhaseNetModel(pl.LightningModule):
             loss = focal_loss(
                 nn.functional.softmax(predict, dim=1), label,
             )
-        # sgram_raw should only be for logging
+        # sgram should only be for logging
         if self.spec_conf.power == None:
             # convert to power
-            real = sgram_raw[:, :3, :, :]
-            imag = sgram_raw[:, 3:, :, :]
-            sgram_raw = real**2+imag**2
+            real = sgram[:, :3, :, :]
+            imag = sgram[:, 3:, :, :]
+            sgram = real**2+imag**2
 
         segout = output["segout"] if ("segout" in output) else None
-        return loss, sgram_raw, predict, segout
+        return loss, sgram, predict, segout
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(

@@ -37,7 +37,7 @@ visualize:
   log_val: false
   log_test: false
   log_epoch: 30
-  sgram_threshold: 500 
+  sgram_threshold: 500
   log_test_seprate_folder: false
   log_test_seprate_folder_path: ""
 

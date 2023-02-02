@@ -27,8 +27,6 @@ class DataConfig:
     win_length: float = 120.
     left_extend: float = 10.
     right_extend: float = 110.
-    avoid_first_ten_seconds: bool = True  # avoid taper effect
-    avoid_last_ten_seconds: bool = True  # avoid taper effect
     width: int = 4800
     # * label
     label_shape: str = "gaussian"
@@ -54,9 +52,6 @@ class DataConfig:
     noise_replace_ratio: float = 0.05  # ! hyper tune
 
     scale_at_end: bool = True
-    scale_max_amp: float = 1.0
-    scale_global_max: bool = True
-    scale_norm: bool = True  # normalization to std distribution, ignore scale_max_amp
     # * batch size and shuffle
     train_batch_size: int = 32
     val_batch_size: int = 1
@@ -84,12 +79,6 @@ class SpectrogramConfig:
     height: int = 64
     width: int = 4800  # should equal to win_len*sampling_rate
     max_clamp: int = 3000  # ! hyper tune
-    # * normalize factors from train_estimate_mean_std.py
-    mean_std_normalize: bool = True
-    mean: List[float] = field(default_factory=lambda: [
-        130.9636, 136.6858,  97.8700])
-    std: List[float] = field(default_factory=lambda: [
-        362.7432, 374.5648, 296.8759])
 
 
 @dataclass

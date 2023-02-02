@@ -3,19 +3,18 @@ data:
   filter_freqmin: 2
 
 # train:
-  # accelerator: gpu
-  # strategy: ddp_find_unused_parameters_false
-  # use_amp: false
-  # use_a100: false
+# accelerator: gpu
+# strategy: ddp_find_unused_parameters_false
+# use_amp: false
+# use_a100: false
 
-  # distributed_devices: [3]
+# distributed_devices: [3]
 
 model:
   nn_model: deeplabv3+
   in_channels: 6
 
 spectrogram:
-  mean_std_normalize: false
   power: null
 
 wandb:

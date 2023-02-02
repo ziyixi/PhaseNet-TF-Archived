@@ -1,6 +1,7 @@
+from typing import List
+
 import torch
 from torchmetrics import Metric
-from typing import List
 
 
 class MetricBase(Metric):
