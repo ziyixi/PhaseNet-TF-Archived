@@ -87,6 +87,8 @@ class StreamToTensorTransform:
         stream = sample.pop("stream")
         components = ["R", "T", "Z"]
         components_replace = ["E", "N", "Z"]
+        if self.inference_conf.save_waveform_stream:
+            sample["ids"] = []
         traces = []
         for i in range(3):
             trace = stream.select(component=components[i])
@@ -94,6 +96,8 @@ class StreamToTensorTransform:
                 trace = stream.select(component=components_replace[i])
             trace = trace[0]
             traces.append(trace)
+            if self.inference_conf.save_waveform_stream:
+                sample["ids"].append(trace.id)
         min_length = min(len(item) for item in traces)
         # we have to pad 0, so min_length can be divied by sliding_step
         # and it's at least width
@@ -117,7 +121,8 @@ class StreamNormalizeTransform:
 
     def __call__(self, sample: Dict) -> Dict:
         data = sample["data"]
-        sample["raw_data"] = sample["data"].clone()
+        if self.inference_conf.save_waveform_stream:
+            sample["raw_data"] = sample["data"].clone()
         length = data.shape[1]
         steps = (length-self.inference_conf.width)//self.inference_conf.sliding_step+1
         # * calculate each sliding windows' mean and std

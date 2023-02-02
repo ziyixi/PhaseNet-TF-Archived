@@ -13,6 +13,8 @@ from phasenet.conf import Config
 from phasenet.core.loss import focal_loss
 from phasenet.data.sgram import GenSgram
 from phasenet.model.unet import UNet
+from phasenet.utils.continious import (convert_batch_to_continious,
+                                       convert_continious_to_batch)
 from phasenet.utils.helper import Normalize
 from phasenet.utils.metrics import F1, Precision, Recall
 from phasenet.utils.peaks import extract_peaks
@@ -28,6 +30,7 @@ class PhaseNetModel(pl.LightningModule):
         self.model_conf = conf.model
         self.train_conf = conf.train
         self.visualize_conf = conf.visualize
+        self.inference_conf = conf.inference
 
         # * define the model
         self.sgram_trans = GenSgram(self.spec_conf)
@@ -209,14 +212,20 @@ class PhaseNetModel(pl.LightningModule):
         }
 
     def predict_step(self, batch: Dict, batch_idx: int) -> Dict:
-        wave = batch["data"]
+        wave_continious = batch["data"]
+
+        wave = convert_continious_to_batch(
+            wave_continious, self.inference_conf.width, self.inference_conf.sliding_step)
         sgram = self.sgram_trans(wave)
         output = self.model(sgram)
         predict = nn.functional.softmax(output["predict"], dim=1)
-        peaks = extract_peaks(predict, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
+        predict_continious = convert_batch_to_continious(
+            predict, self.inference_conf.width, self.inference_conf.sliding_step)
+
+        peaks = extract_peaks(predict_continious, self.conf.data.phases, self.conf.postprocess.sensitive_heights,
                               self.conf.postprocess.sensitive_distances, self.conf.spectrogram.sampling_rate)
         return {
-            "predict": predict,
+            "predict": predict_continious,
             "arrivals": peaks["arrivals"],
             "amps": peaks["amps"]
         }

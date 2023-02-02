@@ -12,6 +12,7 @@ from phasenet.core.lighting_model import PhaseNetModel
 from phasenet.data.lighting_data import ContiniousSeedDataModule
 from phasenet.model.segmentation_models import create_smp_model
 from phasenet.model.unet import UNet
+from phasenet.utils.continious import InferenceWriter
 from phasenet.utils.helper import get_git_revision_short_hash
 
 logger = logging.getLogger('lightning')
@@ -48,7 +49,8 @@ def inference_app(cfg: Config) -> None:
 
     # * callbacks
     callbacks = []
-    callbacks.append(ModelSummary(max_depth=2))
+    callbacks.append(InferenceWriter(
+        phases=cfg.data.phases, inference_conf=cfg.inference))
 
     # * prepare trainner
     precision = 32
@@ -63,7 +65,7 @@ def inference_app(cfg: Config) -> None:
         accelerator=train_conf.accelerator,
         deterministic=train_conf.deterministic,
         devices=(
-            train_conf.distributed_devices if train_conf.accelerator == "gpu" else None),
+            train_conf.distributed_devices if train_conf.accelerator == "gpu" else 1),
         precision=precision,
         strategy=(train_conf.strategy if train_conf.accelerator ==
                   "gpu" else None),

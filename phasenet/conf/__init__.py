@@ -253,6 +253,12 @@ class InferenceConfig:
     # * checkpoint loading reference
     wandb_checkpoint_reference: str = MISSING
 
+    # * infrence output
+    inference_output_dir: Path = MISSING
+    save_prediction_stream: bool = False
+    save_waveform_stream: bool = False
+    save_phase_arrivals: bool = True  # will be saved to phase_arrivals.csv
+
 
 # * ======================================== * #
 # * main conf
