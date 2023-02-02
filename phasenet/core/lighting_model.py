@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from os.path import join
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
@@ -20,6 +20,12 @@ from phasenet.utils.visualize import VisualizeInfo
 
 class PhaseNetModel(pl.LightningModule):
     def __init__(self, model: nn.Module, conf: Config) -> None:
+        """The pl model for PhaseNet-TF
+
+        Args:
+            model (nn.Module): the ML model class, either UNet or constructed from create_smp_model
+            conf (Config): the OmegaConf config from Hydra
+        """
         super().__init__()
         # * load confs
         self.conf = conf
@@ -156,7 +162,15 @@ class PhaseNetModel(pl.LightningModule):
         # actually not needed as only one epoch is presented
         self.log_hparms(metrics)
 
-    def _shared_eval_step(self, batch: Dict) -> torch.Tensor:
+    def _shared_eval_step(self, batch: Dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """the shared loss calculation func for train/val/test
+
+        Args:
+            batch (Dict): the input batch dict
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: the output tensors
+        """
         wave, label = batch["data"], batch["label"]
         sgram = self.sgram_trans(wave)
         if self.model_conf.train_with_spectrogram:
@@ -214,7 +228,11 @@ class PhaseNetModel(pl.LightningModule):
     # * ============== helpers ============== * #
     @property
     def _num_training_steps(self) -> int:
-        """Total training steps inferred from datamodule and devices."""
+        """Total training steps inferred from datamodule and devices.
+
+        Returns:
+            int: the total training steps
+        """
         # from https://github.com/PyTorchLightning/pytorch-lightning/issues/5449
         if self.trainer.max_steps != -1:
             return self.trainer.max_steps
@@ -229,6 +247,11 @@ class PhaseNetModel(pl.LightningModule):
         return (batches // effective_accum) * self.trainer.max_epochs
 
     def log_hparms(self, metrics: Dict[str, torch.Tensor]):
+        """Log metrics and model configurations
+
+        Args:
+            metrics (Dict[str, torch.Tensor]): the additional metrics to save, which are calculated at the final test step
+        """
         hparam = {
             "data/stack_ratio": self.conf.data.stack_ratio,
             "data/noise_replace_ratio": self.conf.data.noise_replace_ratio,
@@ -265,6 +288,12 @@ class PhaseNetModel(pl.LightningModule):
             self.logger.experiment.config.update(metrics)
 
     def save_test_steps(self, file_name: str, to_save: Dict[str, torch.Tensor]) -> None:
+        """Dump the test step temporary result to disk
+
+        Args:
+            file_name (str): the output file name
+            to_save (Dict[str, torch.Tensor]): the dict to save
+        """
         # save tensors to disk for further analysis
         file_path = join(self.conf.postprocess.test_step_save_path, file_name)
         # update to_save to cpu array
@@ -280,6 +309,16 @@ class PhaseNetModel(pl.LightningModule):
     # * ============== figure plotting ============== * #
     @rank_zero_only
     def _log_figs(self, batch: Dict, batch_idx: int, sgram: torch.Tensor, predict: torch.Tensor, peaks: Dict[str, List[List[List]]], stage: str) -> None:
+        """Log figs to the logger
+
+        Args:
+            batch (Dict): the current batch
+            batch_idx (int): the current batch index
+            sgram (torch.Tensor): the sgram of the current batch
+            predict (torch.Tensor): the prediction result from the model
+            peaks (Dict[str, List[List[List]]]): the peaks extracted from the peak extracter
+            stage (str): current stage, either train/val/test
+        """
         if_log = {
             "train": self.visualize_conf.log_train,
             "val": self.visualize_conf.log_val,
@@ -318,49 +357,3 @@ class PhaseNetModel(pl.LightningModule):
                     for each in figs_store[stage]:
                         plt.close(each)
                     figs_store[stage].clear()
-
-
-class MeanStdEstimator(pl.LightningModule):
-    def __init__(self, conf: Config) -> None:
-        super().__init__()
-        self.spec_conf = conf.spectrogram
-        self.sgram_trans = GenSgram(self.spec_conf)
-        self.dummy_layer = nn.BatchNorm2d(conf.model.in_channels)
-
-    def training_step(self, batch: Dict, batch_idx: int):
-        wave = batch["data"]
-        sgram = self.sgram_trans(wave)
-
-        mean = sgram.mean(dim=[0, 2, 3])
-        meansq = (sgram**2).mean(dim=[0, 2, 3])
-        return {
-            "loss": self.dummy_layer(sgram).mean(),
-            "mean": mean,
-            "meansq": meansq
-        }
-
-    def training_epoch_end(self, outputs: Dict[str, torch.tensor]) -> None:
-        mean = torch.stack([x["mean"] for x in outputs]).mean(dim=0)
-        meansq = torch.stack([x["meansq"] for x in outputs]).mean(dim=0)
-        std = torch.sqrt(meansq - mean**2)
-        if self.global_rank == 0:
-            print("="*10)
-            print(f"mean: {mean}")
-            print(f"std: {std}")
-            print("="*10)
-
-    def configure_optimizers(self):
-        # dummy one, not actually important
-        optimizer = torch.optim.AdamW(
-            self.parameters(), lr=0.01, weight_decay=0.001, amsgrad=False
-        )
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[30, 60, 90, 120], gamma=0.5
-        )
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": lr_scheduler,
-                "interval": "epoch"
-            }
-        }

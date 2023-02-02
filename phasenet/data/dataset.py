@@ -19,10 +19,6 @@ from phasenet.conf import DataConfig
 
 
 class WaveFormDataset(Dataset):
-    """
-    Waveform dataset and phase arrival time tag.
-    """
-
     def __init__(self, data_conf: DataConfig, data_type: str = "train", transform=None, stack_transform=None, replace_noise_transform=None, scale_at_end_transform=None, prepare: bool = False) -> None:
         super().__init__()
         self.data_conf = data_conf
