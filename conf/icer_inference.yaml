@@ -2,24 +2,24 @@
 data:
   filter_freqmin: 1
 
-# train:
-#   accelerator: gpu
-#   distributed_devices: [3]
+train:
+  accelerator: gpu
+  distributed_devices: [0, 1, 2, 3]
 
 wandb:
-  job_name: test
-  project_name: PhaseNet-TF-Inference-Test
+  job_name: bench_train
+  project_name: PhaseNet-TF-Inference
 
 inference:
   sqlite_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_continious/tongaml_continious_response_removed.sqlite
-  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/test.csv
+  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/train_benchmark.csv
   # https://wandb.ai/xiziyi/PhaseNet-TF/artifacts/model/model-b2zisxi6/d18959153f47c28eb4ec/usage
   wandb_checkpoint_reference: xiziyi/PhaseNet-TF/model-b2zisxi6:v0
 
   save_prediction_stream: true
   save_waveform_stream: true
   save_phase_arrivals: true
-  inference_output_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_inference_result
+  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench
 
   num_workers: 10
 
@@ -27,4 +27,12 @@ inference:
 
 hydra:
   job:
-    name: test
+    name: bench_train
+  launcher:
+      timeout_min: 239
+      nodes: 1
+      tasks_per_node: 4
+      cpus_per_task: 5
+      mem_gb: 150
+      gres: gpu:v100:4
+      account: cmse
