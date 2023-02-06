@@ -1,6 +1,6 @@
 # @package _global_
 data:
-  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20221124
+  data_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset-coverall-20230206
   train: tongaml_train.h5
   test: tongaml_test.h5
   val: tongaml_val.h5
