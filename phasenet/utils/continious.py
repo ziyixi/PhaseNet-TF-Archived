@@ -56,6 +56,9 @@ class InferenceWriter(BasePredictionWriter):
         self.save_phase_arrivals = inference_conf.save_phase_arrivals
 
     def write_on_batch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", prediction, batch_indices, batch: Dict, batch_idx: int, dataloader_idx: int) -> None:
+        if "data" not in batch:
+            return
+
         start = UTCDateTime(batch["start"][0])
         end = UTCDateTime(batch["end"][0])
         net = batch["net"][0]

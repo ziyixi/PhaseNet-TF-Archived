@@ -22,6 +22,9 @@ class SeedSqliteDataset(Dataset):
         self.transform = transform
         self.inference_conf = inference_conf
         self.client = Client(database=str(inference_conf.sqlite_path))
+        self.problematic_log_file = inference_conf.inference_output_dir/"empty_requirement.log"
+        with self.problematic_log_file.open("w") as f:
+            f.write("net,sta,start,end,stream_len\n")
         # * index all the requirement
         requirement = pd.read_csv(
             inference_conf.continious_requirement_path, comment='#')
@@ -58,6 +61,11 @@ class SeedSqliteDataset(Dataset):
             "end": str(end),
             "stream": st
         }
+        if len(st) != 3:
+            # only supported with batch_size=1 in inference
+            with self.problematic_log_file.open("w") as f:
+                f.write(f"{net},{sta},{str(start)},{str(end)},{len(st)}\n")
+            return {}
         if self.transform:
             res = self.transform(res)
         return res
@@ -87,6 +95,7 @@ class StreamToTensorTransform:
         stream = sample.pop("stream")
         components = ["R", "T", "Z"]
         components_replace = ["E", "N", "Z"]
+        components_replace2 = ["1", "2", "Z"]
         if self.inference_conf.save_waveform_stream:
             sample["ids"] = []
         traces = []
@@ -94,6 +103,8 @@ class StreamToTensorTransform:
             trace = stream.select(component=components[i])
             if len(trace) == 0:
                 trace = stream.select(component=components_replace[i])
+            if len(trace) == 0:
+                trace = stream.select(component=components_replace2[i])
             trace = trace[0]
             traces.append(trace)
             if self.inference_conf.save_waveform_stream:

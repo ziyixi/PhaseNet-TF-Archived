@@ -216,6 +216,8 @@ class PhaseNetModel(pl.LightningModule):
         }
 
     def predict_step(self, batch: Dict, batch_idx: int) -> Dict:
+        if "data" not in batch:
+            return {}
         wave_continious = batch["data"]
 
         wave = convert_continious_to_batch(
