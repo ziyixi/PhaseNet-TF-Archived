@@ -151,6 +151,11 @@ def main(asdf_path: str, csv_path: str, sac_dir_ps: str, sac_dir_s: str, sac_dir
                         trace.stats.network = event_key
                         trace.stats.station = station_key
                         stream += trace
+
+                    # * rotate the waveform from RTZ to NEZ
+                    baz = stream[0].stats.sac.baz
+                    stream.rotate("RT->NE", back_azimuth=baz)
+
                     ds.add_waveforms(stream, tag="raw_recording",
                                      event_id=event_dict[event_key])
         # add stationxml

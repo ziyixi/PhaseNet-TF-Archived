@@ -19,17 +19,24 @@ inference:
   save_prediction_stream: true
   save_waveform_stream: true
   save_phase_arrivals: true
-  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench
+  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_low_threshold
 
   num_workers: 10
 
   continious_handle_time: 3600
 
+postprocess:
+  sensitive_heights:
+    TP: 0.2
+    TS: 0.2
+    TPS: 0.1
+
+
 hydra:
   job:
     name: bench_train
   launcher:
-      timeout_min: 239
+      timeout_min: 60
       nodes: 1
       tasks_per_node: 4
       cpus_per_task: 5
