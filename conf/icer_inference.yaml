@@ -19,7 +19,7 @@ inference:
   save_prediction_stream: true
   save_waveform_stream: true
   save_phase_arrivals: true
-  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_debug
+  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_debug_max
 
   num_workers: 10
 

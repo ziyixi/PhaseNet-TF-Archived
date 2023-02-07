@@ -34,13 +34,16 @@ def convert_batch_to_continious(input_array: torch.Tensor, width: int, sliding_s
     steps, cha, time = input_array.shape
     time = (steps-1)*sliding_step+width
     res = torch.zeros(1, cha, time, device=input_array.device)
-    counts = torch.zeros(1, cha, time, device=input_array.device)
+    # counts = torch.zeros(1, cha, time, device=input_array.device)
     for istep in range(steps):
+        # res[0, :, istep * sliding_step:width+istep *
+        #     sliding_step] += input_array[istep, :, :]
         res[0, :, istep * sliding_step:width+istep *
-            sliding_step] += input_array[istep, :, :]
-        counts[0, :, istep * sliding_step:width+istep *
-               sliding_step] += 1
-    res = res/counts
+            sliding_step] = torch.maximum(res[0, :, istep * sliding_step:width+istep *
+                                              sliding_step], input_array[istep, :, :])
+        # counts[0, :, istep * sliding_step:width+istep *
+        #        sliding_step] += 1
+    # res = res/counts
     return res
 
 
