@@ -16,10 +16,10 @@ inference:
   # https://wandb.ai/xiziyi/PhaseNet-TF/artifacts/model/model-b2zisxi6/d18959153f47c28eb4ec/usage
   wandb_checkpoint_reference: xiziyi/PhaseNet-TF/model-k306koif:v0
 
-  save_prediction_stream: true
-  save_waveform_stream: true
+  save_prediction_stream: false
+  save_waveform_stream: false
   save_phase_arrivals: true
-  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_debug_max
+  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_debug_max_low_threshold
 
   num_workers: 10
 
@@ -27,9 +27,9 @@ inference:
 
 postprocess:
   sensitive_heights:
-    TP: 0.5
-    TS: 0.5
-    TPS: 0.3
+    TP: 0.2
+    TS: 0.2
+    TPS: 0.1
 
 
 hydra:
