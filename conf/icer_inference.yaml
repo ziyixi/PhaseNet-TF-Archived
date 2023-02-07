@@ -14,12 +14,12 @@ inference:
   sqlite_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_continious/tongaml_continious_response_removed.sqlite
   continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/train_benchmark.csv
   # https://wandb.ai/xiziyi/PhaseNet-TF/artifacts/model/model-b2zisxi6/d18959153f47c28eb4ec/usage
-  wandb_checkpoint_reference: xiziyi/PhaseNet-TF/model-b2zisxi6:v0
+  wandb_checkpoint_reference: xiziyi/PhaseNet-TF/model-k306koif:v0
 
   save_prediction_stream: true
   save_waveform_stream: true
   save_phase_arrivals: true
-  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_low_threshold
+  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_norotate_low_threshold
 
   num_workers: 10
 
