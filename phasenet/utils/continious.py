@@ -85,7 +85,7 @@ class InferenceWriter(BasePredictionWriter):
                 f"{net}.{sta}.{str(start)}.{str(end)}.waveform.mseed"
             stream = obspy.Stream()
             for icomponent in range(len(batch["ids"])):
-                d = batch["raw_data"][0][iphase].detach().cpu().numpy()
+                d = batch["raw_data"][0][icomponent].detach().cpu().numpy()
                 trace = obspy.Trace(data=d)
                 trace.stats.starttime = start
                 trace.stats.sampling_rate = self.sampling_rate
