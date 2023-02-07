@@ -19,7 +19,7 @@ inference:
   save_prediction_stream: true
   save_waveform_stream: true
   save_phase_arrivals: true
-  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_norotate_low_threshold
+  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_norotate
 
   num_workers: 10
 
@@ -27,9 +27,9 @@ inference:
 
 postprocess:
   sensitive_heights:
-    TP: 0.2
-    TS: 0.2
-    TPS: 0.1
+    TP: 0.5
+    TS: 0.5
+    TPS: 0.3
 
 
 hydra:
