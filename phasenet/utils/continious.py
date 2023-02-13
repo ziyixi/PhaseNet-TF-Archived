@@ -64,6 +64,7 @@ class InferenceWriter(BasePredictionWriter):
 
         start = UTCDateTime(batch["start"][0])
         end = UTCDateTime(batch["end"][0])
+        true_start = UTCDateTime(batch["true_start"][0])
         net = batch["net"][0]
         sta = batch["sta"][0]
 
@@ -79,8 +80,10 @@ class InferenceWriter(BasePredictionWriter):
                     for arrival, amp in zip(prediction["arrivals"][0][iphase], prediction["amps"][0][iphase]):
                         phase_offset = float(
                             f"{arrival/self.sampling_rate:.2f}")
-                        f.write(
-                            f"{net},{sta},{str(start)},{str(end)},{phase},{arrival},{str(start+phase_offset)},{amp:.2f}\n")
+                        arrival_time = true_start+phase_offset
+                        if start <= arrival_time <= end:
+                            f.write(
+                                f"{net},{sta},{str(start)},{str(end)},{phase},{arrival},{str(arrival_time)},{amp:.2f}\n")
 
         # * save to net.sta.start.end.waveform.sac
         if self.save_waveform_stream:
@@ -90,7 +93,7 @@ class InferenceWriter(BasePredictionWriter):
             for icomponent in range(len(batch["ids"])):
                 d = batch["raw_data"][0][icomponent].detach().cpu().numpy()
                 trace = obspy.Trace(data=d)
-                trace.stats.starttime = start
+                trace.stats.starttime = true_start
                 trace.stats.sampling_rate = self.sampling_rate
                 network, station, locaton, channel = batch["ids"][icomponent][0].split(
                     ".")
@@ -98,6 +101,7 @@ class InferenceWriter(BasePredictionWriter):
                 trace.stats.station = station
                 trace.stats.locaton = locaton
                 trace.stats.channel = channel
+                trace.trim(start, end)
                 stream += trace
             stream.write(str(fname), format="MSEED")
 
@@ -109,11 +113,12 @@ class InferenceWriter(BasePredictionWriter):
             for iphase, phase in enumerate(self.phases):
                 d = prediction["predict"][0][iphase+1].detach().cpu().numpy()
                 trace = obspy.Trace(data=d)
-                trace.stats.starttime = start
+                trace.stats.starttime = true_start
                 trace.stats.sampling_rate = self.sampling_rate
                 trace.stats.network = net
                 trace.stats.station = sta
                 trace.stats.locaton = ""
                 trace.stats.channel = phase
+                trace.trim(start, end)
                 stream += trace
             stream.write(str(fname), format="MSEED")

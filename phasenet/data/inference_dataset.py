@@ -49,7 +49,12 @@ class SeedSqliteDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Dict:
         net, sta, start, end = self.all_splits[idx]
-        st = self.client.get_waveforms(net, sta, "*", "*", start, end)
+        # cut with the buffer size to improve the performance near the boundary
+        # and also eliminate the boundary taper issue
+        buffer_length = self.inference_conf.width/self.inference_conf.sampling_rate
+        st = self.client.get_waveforms(
+            net, sta, "*", "*", start-buffer_length, end+buffer_length)
+
         if self.inference_conf.unit_is_m:
             for i in range(len(st)):
                 st[i].data *= 10**9
@@ -109,7 +114,20 @@ class StreamToTensorTransform:
             traces.append(trace)
             if self.inference_conf.save_waveform_stream:
                 sample["ids"].append(trace.id)
+        # min_length = min(len(item) for item in traces)
+        # there might be cases that the starting time is not aligned, so here we trim everything first
+        true_start = max(item.stats.starttime for item in traces)
+        true_end = min(item.stats.endtime for item in traces)
+        for i in range(len(traces)):
+            traces[i].trim(true_start, true_end)
         min_length = min(len(item) for item in traces)
+        # curent min_time and max_time will be different with start and end (as having buffer & trim)
+        # so we need to record to cut them later
+        sample["true_start"] = str(true_start)
+        # as we will append 0 in tensor, there is no meaning to record true_end
+        # it will be calculated using length and sampling_rate with true_start
+        # sample["true_end"] = str(true_end)
+
         # we have to pad 0, so min_length can be divied by sliding_step
         # and it's at least width
         div = int(np.ceil(min_length/self.inference_conf.sliding_step))
