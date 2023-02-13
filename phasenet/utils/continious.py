@@ -81,9 +81,15 @@ class InferenceWriter(BasePredictionWriter):
                         phase_offset = float(
                             f"{arrival/self.sampling_rate:.2f}")
                         arrival_time = true_start+phase_offset
+                        if true_start < start:
+                            arrival_pos = int(
+                                arrival-(start-true_start)*self.sampling_rate)
+                        else:
+                            arrival_pos = arrival
+
                         if start <= arrival_time <= end:
                             f.write(
-                                f"{net},{sta},{str(start)},{str(end)},{phase},{arrival},{str(arrival_time)},{amp:.2f}\n")
+                                f"{net},{sta},{str(start)},{str(end)},{phase},{arrival_pos},{str(arrival_time)},{amp:.2f}\n")
 
         # * save to net.sta.start.end.waveform.sac
         if self.save_waveform_stream:

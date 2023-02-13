@@ -17,10 +17,14 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 # * ======= configurations =======
-basedir = Path("/mnt/scratch/xiziyi/inference/train_bench_debug_max")
+# basedir = Path("/mnt/scratch/xiziyi/inference/train_bench_debug_max")
+basedir = Path(
+    "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_inference_result")
 reference_path = Path(
     "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/ai4eps/phase_picks.csv")
-output_path = Path("/mnt/scratch/xiziyi/inference/train_bench_debug_max_figs")
+# output_path = Path("/mnt/scratch/xiziyi/inference/train_bench_debug_max_figs")
+output_path = Path(
+    "/mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_inference_result_figs")
 
 
 def get_keys_this_rank():
