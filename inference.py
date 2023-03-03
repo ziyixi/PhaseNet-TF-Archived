@@ -5,7 +5,6 @@ from pathlib import Path
 import hydra
 import wandb
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelSummary
 
 from phasenet.conf import Config
 from phasenet.core.lighting_model import PhaseNetModel
@@ -74,13 +73,17 @@ def inference_app(cfg: Config) -> None:
     )
 
     # * download the checkpoint from wandb
-    run = wandb.init(project=cfg.wandb.project_name)
-    artifact = run.use_artifact(
-        cfg.inference.wandb_checkpoint_reference, type="model")
-    artifact_dir = artifact.download()
+    if not cfg.inference.use_local_checkpoint:
+        run = wandb.init(project=cfg.wandb.project_name)
+        artifact = run.use_artifact(
+            cfg.inference.wandb_checkpoint_reference, type="model")
+        artifact_dir = artifact.download()
+        ckpt_path = Path(artifact_dir)/"model.ckpt"
+    else:
+        ckpt_path = cfg.inference.local_checkpoint_path
 
     trainer.predict(model=light_model,
-                    dataloaders=light_data.predict_dataloader(), ckpt_path=Path(artifact_dir)/"model.ckpt")
+                    dataloaders=light_data.predict_dataloader(), ckpt_path=ckpt_path)
 
 
 if __name__ == "__main__":

@@ -257,6 +257,9 @@ class InferenceConfig:
     unit_is_m: bool = True
 
     # * checkpoint loading reference
+    # if use local checkpoint, we have to specify one, and will not consider wandb checkpoints
+    use_local_checkpoint: bool = False
+    local_checkpoint_path: Path = MISSING # local checkpoint path, used when use_local_checkpoint==True
     wandb_checkpoint_reference: str = MISSING  # the w&b checkpoint reference path
 
     # * infrence output
