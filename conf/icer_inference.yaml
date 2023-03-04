@@ -4,7 +4,7 @@ data:
 
 train:
   accelerator: gpu
-  distributed_devices: [0, 1, 2, 3]
+  distributed_devices: [2, 3]
 
 wandb:
   job_name: bench_train
@@ -12,14 +12,17 @@ wandb:
 
 inference:
   sqlite_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_continious/tongaml_continious_response_removed.sqlite
-  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/train_benchmark.csv
+  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/test.csv
+
+  use_local_checkpoint: true
+  local_checkpoint_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/bench_train/2023-02-07_14-04-15/0/artifacts/model-k306koif:v0/model.ckpt
   # https://wandb.ai/xiziyi/PhaseNet-TF/artifacts/model/model-b2zisxi6/d18959153f47c28eb4ec/usage
-  wandb_checkpoint_reference: xiziyi/PhaseNet-TF/model-k306koif:v0
+  # wandb_checkpoint_reference: xiziyi/PhaseNet-TF/model-k306koif:v0
 
   save_prediction_stream: false
   save_waveform_stream: false
   save_phase_arrivals: true
-  inference_output_dir: /mnt/scratch/xiziyi/inference/train_bench_debug_max_low_threshold
+  inference_output_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_inference_result
 
   num_workers: 10
 
@@ -34,7 +37,7 @@ postprocess:
 
 hydra:
   job:
-    name: bench_train
+    name: test
   launcher:
       timeout_min: 60
       nodes: 1
