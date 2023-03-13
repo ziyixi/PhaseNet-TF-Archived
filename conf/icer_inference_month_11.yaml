@@ -12,7 +12,7 @@ wandb:
 
 inference:
   sqlite_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/dataset_continious/tongaml_continious_response_removed.sqlite
-  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/months/0.csv
+  continious_requirement_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_requirement/months/11.csv
 
   use_local_checkpoint: true
   local_checkpoint_path: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/outputs/bench_train/2023-02-07_14-04-15/0/artifacts/model-k306koif:v0/model.ckpt
@@ -22,7 +22,7 @@ inference:
   save_prediction_stream: false
   save_waveform_stream: false
   save_phase_arrivals: true
-  inference_output_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_inference_result/months/month_0
+  inference_output_dir: /mnt/home/xiziyi/Packages_Research/PhaseNet-PyTorch/continious_inference_result/months/month_11
 
   num_workers: 10
 

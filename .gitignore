@@ -170,3 +170,4 @@ dataset-coverall-20230206/
 scripts/*.sh
 scripts/*.out
 continious_inference_result_figs/
+inference_all.sh
