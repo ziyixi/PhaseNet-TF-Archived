@@ -68,7 +68,7 @@ class SeedSqliteDataset(Dataset):
         }
         if len(st) != 3:
             # only supported with batch_size=1 in inference
-            with self.problematic_log_file.open("w") as f:
+            with self.problematic_log_file.open("a") as f:
                 f.write(f"{net},{sta},{str(start)},{str(end)},{len(st)}\n")
             return {}
         if self.transform:
