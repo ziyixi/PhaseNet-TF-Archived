@@ -72,7 +72,12 @@ class SeedSqliteDataset(Dataset):
                 f.write(f"{net},{sta},{str(start)},{str(end)},{len(st)}\n")
             return {}
         if self.transform:
-            res = self.transform(res)
+            try:
+                # there might have issue like "The number of derivatives at boundaries does not match: expected 3, got 0+0"
+                # have no idea why it is, but it rarely happens, so just ignore it
+                res = self.transform(res)
+            except:
+                return {}
         return res
 
 
@@ -138,7 +143,7 @@ class StreamToTensorTransform:
         data_np = np.zeros((3, min_length))
         for i in range(3):
             data_np[i, :len(traces[i].data)] = torch.from_numpy(
-                traces[i].data)
+                traces[i].data)[:min_length]
         sample["data"] = torch.tensor(data_np, dtype=torch.float)
         return sample
 
